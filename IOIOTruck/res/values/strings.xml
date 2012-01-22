@@ -1,0 +1,30 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+
+    <string name="hello">Hello World, Main!</string>
+    <string name="app_name">IOIOTruck</string>
+    <string name="wait_ioio">Waiting for IOIO to connect…</string>
+    <string name="ioio_connected">IOIO connected!</string>
+    <string name="led">Led</string>
+    <string name="drive">Drive: </string>
+    <string name="steer">Steer: </string>
+    <string name="shifter">Shifter: </string>
+    <string name="test_activity">Function Test Activity</string>
+    <string name="nav_activity">Navigation Activity</string>
+    <string name="log">Log</string>
+    <string name="go">Go…</string>
+    <string name="stop">Stop…</string>
+    <string name="scrolling">Scrolling</string>
+    <string name="last_update">Last Update: </string>
+    <string name="ms">ms</string>
+    <string name="m">m</string>
+    <string name="by">by Twenty Codes, LLC</string>
+    <string name="version">Version</string>
+    <string name="about">About</string>
+    <string name="about_msg">This application is used to demonstrate the power of an Android phone coupled with the IOIO bord can autonomously drive a remote controlled truck or car to a point selected on a map.\n There is two parts of this application, the first is a Funtion Test activity and the second is the Navigation activity. The Function Test activity allows you to test all the featuers of your rc truck and the IOIO. The Navigation activity allows you to select a point on the map and hit Go. The truck will drive to the point selected on the map and stop once it is there. \n\nSpeed controller Port: 3 \nSteering servo Port: 5 \nShifter servo Port: 4</string>
+    <string name="build">build</string>
+    <string name="no_gps_signal">No GPS signal at this time, please try agian</string>
+    <string name="point_selected">Location Selected: </string>
+    <string name="dest_reached">Destination reached</string>
+
+</resources>
