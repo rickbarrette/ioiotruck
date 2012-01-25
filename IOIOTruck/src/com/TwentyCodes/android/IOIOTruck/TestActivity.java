@@ -24,6 +24,7 @@ import com.TwentyCodes.android.exception.ExceptionHandler;
  * @author ricky barrette
  */
 public class TestActivity extends Activity implements JoystickMovedListener, OnSeekBarChangeListener, OnCheckedChangeListener, IOIOTruckThreadListener {
+	private static final String TAG = "TestActivity";
 	private TextView mStatusTextView;
 	private TextView mDriveTextView;
 	private TextView mSteerTextView;
@@ -86,7 +87,6 @@ public class TestActivity extends Activity implements JoystickMovedListener, OnS
 		try {
 			mIOIOManager.abort();
 		} catch (InterruptedException e) {
-			// TODO Auto-generated catch block
 			e.printStackTrace();
 		}
 	}
@@ -135,9 +135,10 @@ public class TestActivity extends Activity implements JoystickMovedListener, OnS
 	 */
 	@Override
 	public void onProgressChanged(SeekBar seekBar, int progress, boolean fromUser) {
-		int shifter = progress + 1000;
-		mIOIOManager.setShifterValue(shifter);
-		mShifterTextView.setText(getString(R.string.shifter)+shifter);
+		float shifter = progress + 1000;
+		mIOIOManager.setShifterValue(progress + 1000);
+		
+		mShifterTextView.setText(getString(R.string.shifter)+ shifter);
 	}
 
 	@Override

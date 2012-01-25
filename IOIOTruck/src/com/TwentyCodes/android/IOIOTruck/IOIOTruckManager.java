@@ -6,13 +6,12 @@
  */
 package com.TwentyCodes.android.IOIOTruck;
 
+import ioio.lib.api.DigitalOutput;
 import ioio.lib.api.IOIO;
 import ioio.lib.api.PwmOutput;
 import ioio.lib.api.exception.ConnectionLostException;
 import android.app.Activity;
-import android.util.Log;
 
-import com.TwentyCodes.android.IOIOTruck.R;
 import com.TwentyCodes.android.ioio.IOIOManager;
 
 /**
@@ -32,14 +31,14 @@ public class IOIOTruckManager extends IOIOManager {
 	private static final String TAG = "IOIOTruckThread";
 	private Activity mActivity;
 	private IOIOTruckThreadListener mListener;
-	private PwmOutput mDrive;
-	private PwmOutput mSteer;
-	private PwmOutput mShifter;
-	private int mDriveValue;
-	private int mSteerValue;
+	private int mLeftDriveValue;
+	private int mRightDriveValue;
 	private int mShifterValue;
 	private boolean mStatLedValue;
-	private boolean isTank = false;
+	private TB6612FNGMotorDriver mLeftMotor;
+	private TB6612FNGMotorDriver mRightMotor;
+	private PwmOutput mShifter;
+	private DigitalOutput mMotorDriverStandBy;
 	
 	/**
 	 * Creates a new IOIOTruckThread
@@ -54,21 +53,25 @@ public class IOIOTruckManager extends IOIOManager {
 		updateLog(R.string.wait_ioio);
 	}
 	
-	private void arcadeDrive() {	
+	/**
+	 * Drives the robot based on the drive and steering values
+	 * @throws ConnectionLostException
+	 * @author ricky barrette
+	 */
+	private void arcadeDrive() throws ConnectionLostException {	
 		int left, right;	
-		left = (mDriveValue + mSteerValue) /2;
-		right = (mDriveValue - mSteerValue) / 2;
+		left = (mLeftDriveValue + mRightDriveValue) /2;
+		right = (mLeftDriveValue - mRightDriveValue) / 2;
 		
-		mDriveValue = left;
-		mSteerValue = right + 1500;
-	    Log.d(TAG, "left: "+ mDriveValue + " right: "+ mSteerValue);
+		mLeftMotor.setSpeed(left);
+		mRightMotor.setSpeed(right + 1500);
 	}
 
 	/**
 	 * @return the mDriveValue
 	 */
 	public synchronized int getDriveValue() {
-		return mDriveValue;
+		return mLeftDriveValue;
 	}
 
 	/**
@@ -82,7 +85,7 @@ public class IOIOTruckManager extends IOIOManager {
 	 * @return the mSteerValue
 	 */
 	public synchronized int getSteerValue() {
-		return mSteerValue;
+		return mRightDriveValue;
 	}
 	
 	/**
@@ -102,9 +105,12 @@ public class IOIOTruckManager extends IOIOManager {
 	public void onConnected(IOIO ioio) throws ConnectionLostException {
 		updateLog(R.string.ioio_connected);
 		
-		mDrive = ioio.openPwmOutput(IOIOTruckValues.DRIVE_PORT, IOIOTruckValues.RC_PWM_FRQ);
-		mSteer = ioio.openPwmOutput(IOIOTruckValues.STEER_PORT, IOIOTruckValues.RC_PWM_FRQ);
 		mShifter = ioio.openPwmOutput(IOIOTruckValues.SHIFTER_PORT, IOIOTruckValues.RC_PWM_FRQ);
+		mLeftMotor = new TB6612FNGMotorDriver(ioio, IOIOTruckValues.MOTOR_DRIVER_PWMA, IOIOTruckValues.MOTOR_DRIVER_A1, IOIOTruckValues.MOTOR_DRIVER_A2);
+		mRightMotor = new TB6612FNGMotorDriver(ioio, IOIOTruckValues.MOTOR_DRIVER_PWMB, IOIOTruckValues.MOTOR_DRIVER_B1, IOIOTruckValues.MOTOR_DRIVER_B2);
+		
+		//enable the motor driver
+		mMotorDriverStandBy = ioio.openDigitalOutput(IOIOTruckValues.MOTOR_DRIVER_STANDBY, true);
 	}
 
 	/**
@@ -126,33 +132,30 @@ public class IOIOTruckManager extends IOIOManager {
 		
 		this.setStatLedEnabled(mStatLedValue);
 		
-		if(isTank){
-			arcadeDrive();
-			mSteer.setPulseWidth(mSteerValue);
-			mDrive.setPulseWidth(mDriveValue);
-		}
-		else {
-			/*
-			 * if the autonomous routine is running
-			 * then drive the truck
-			 * else stop the truck
-			 */
-			if(mStatLedValue)
-				mDrive.setPulseWidth(mDriveValue);
-			else
-				mDrive.setPulseWidth(IOIOTruckValues.DRIVE_STOP);
-		
-		}
-		mSteer.setPulseWidth(mSteerValue);
 		mShifter.setPulseWidth(mShifterValue);
+		
+		mMotorDriverStandBy.write(mStatLedValue);
 
+		/*
+		 * if the autonomous routine is running
+		 * then drive the truck
+		 * else stop the truck
+		 */
+		if(mStatLedValue){
+			arcadeDrive();
+		}
+		else{				
+			mLeftMotor.setSpeed(0);
+			mRightMotor.setSpeed(0);
+		}
+		
 	}
 
 	/**
 	 * @param mDriveValue the mDriveValue to set
 	 */
 	public synchronized void setDriveValue(int mDriveValue) {
-		this.mDriveValue = mDriveValue;
+		this.mLeftDriveValue = mDriveValue;
 	}
 
 	/**
@@ -173,17 +176,9 @@ public class IOIOTruckManager extends IOIOManager {
 	 * @param mSteerValue the mSteerValue to set
 	 */
 	public synchronized void setSteerValue(int mSteerValue) {
-		this.mSteerValue = mSteerValue;
+		this.mRightDriveValue = mSteerValue;
 	}
 
-	/**
-	 * @param isTankDrive
-	 * @author ricky barrette
-	 */
-	public synchronized void setTankDrive(boolean isTankDrive){
-		isTank = isTankDrive;
-	}
-	
 	/**
 	 * updates the log listener in the UI thread 
 	 * @param resId
@@ -197,7 +192,5 @@ public class IOIOTruckManager extends IOIOManager {
 					mListener.onLogUpdate(mActivity.getString(resId));
 				}
 			});
-		
 	}
-
 }

@@ -15,10 +15,45 @@ import com.TwentyCodes.android.ioio.IOIOValues;
 public class IOIOTruckValues extends IOIOValues {
 	
 	/**
+	 * IOIO port for the motor driver pwma port
+	 */
+	public static final int MOTOR_DRIVER_PWMA = 4;
+	
+	/**
+	 * IOIO port for the motor driver a2 port
+	 */
+	public static final int MOTOR_DRIVER_A2 = 5;
+	
+	/**
+	 * IOIO port for the motor driver a1 port
+	 */
+	public static final int MOTOR_DRIVER_A1 = 6;
+	
+	/**
+	 * IOIO port for the motor driver stby port
+	 */
+	public static final int MOTOR_DRIVER_STANDBY = 7;
+	
+	/**
+	 * IOIO port for the motor driver b1 port
+	 */
+	public static final int MOTOR_DRIVER_B1 = 8;
+	
+	/**
+	 * IOIO port for the motor driver b2 port
+	 */
+	public static final int MOTOR_DRIVER_B2 = 9;
+	
+	/**
+	 * IOIO port for the motor driver pwmb port
+	 */
+	public final static int MOTOR_DRIVER_PWMB = 10;
+	
+	/**
 	 * stop the truck
 	 * PWM value
 	 */
-	public static final int DRIVE_STOP = 1500;
+	public static final int DRIVE_STOP = RC_PWM_PULSE_WIDTH_NEUTRAL;
 	
 	/**
 	 * drive the truck forward
@@ -33,56 +68,24 @@ public class IOIOTruckValues extends IOIOValues {
 	public static final int DRIVE_REVERSE = 1700;
 
 	/**
-	 * IOIO port to drive the speed controller
+	 * IOIO port for the "shifter"
 	 */
-	public static final int DRIVE_PORT = 3;
-	
-	/**
-	 * IOIO port to drive the shifter servo
-	 */
-	public static final int SHIFTER_PORT = 4;
-	
-	/**
-	 * IOIO port to drive the steering servo
-	 */
-	public static final int STEER_PORT = 5;
+	public static final int SHIFTER_PORT = 3;
 
 	/**
-	 * steers the truck straight
-	 * PWM value
+	 * Steering value to drive the robot straight
 	 */
-	public static final int STEER_STRAIGHT = 1500; 
-	
+	public static final int STEER_STRAIGHT = RC_PWM_PULSE_WIDTH_NEUTRAL;
+
 	/**
-	 * steers the truck left
-	 * PWM value
+	 * Steering value to drive the robot right
 	 */
-	public static final int STEER_LEFT = 1400;
-	
+	public static final int STEER_RIGHT = 1700;
+
 	/**
-	 * steers the truck right
-	 * PWM value
+	 * Steering value to drive the robot left
 	 */
-	public static final int STEER_RIGHT = 1600;
-	
-	/**
-	 * 
-	 * shifts truck into first
-	 * PWM value
-	 */
-	public static final int SHIFT_FIRST = 1500; 
-	
-	/**
-	 * shifts the truck into second
-	 * TODO verify value
-	 * PWM value
-	 */
-	public static final int SHIFT_SECOND = 1000;
-	
-	/**
-	 * shifts the truck into 3rd
-	 * PWM value
-	 */
-	public static final int SHIFT_THRID = 2000;
+	public static final int STEER_LEFT = 1300;
+
 
 }
