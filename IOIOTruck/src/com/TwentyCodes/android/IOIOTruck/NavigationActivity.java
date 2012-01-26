@@ -63,6 +63,7 @@ public class NavigationActivity extends FragmentActivity implements CompassListe
 	private TextView mLastUpdateTextView;
 	private long mLast;
 	private WakeLock mWakeLock;
+	private int mCount;
 	
 	/**
 	 * This thread will be used to update all the informational displays
@@ -181,6 +182,7 @@ public class NavigationActivity extends FragmentActivity implements CompassListe
 			@Override
 			public void run(){
 				if(isRun){
+					mCount = 0;
 					mGoButton.setText(R.string.go);
 					isRunning = false;
 					updateLog(R.string.stop);
@@ -264,12 +266,18 @@ public class NavigationActivity extends FragmentActivity implements CompassListe
 		 */
 		if(mPoint != null)
 			if(GeoUtils.isIntersecting(point, (float) (accuracy / 1E3), mPoint, Debug.RADIUS, Debug.FUDGE_FACTOR)) {
-				Log.v(TAG, "Dest Reached, Stopping");
-				mIOIOManager.setDriveValue(IOIOTruckValues.DRIVE_STOP);
-				updateGoButton(true);
-				updateLog(R.string.dest_reached);
+				
+				mCount++;
+				
+				if(mCount > 5){
+					Log.v(TAG, "Dest Reached, Stopping");
+					mIOIOManager.setDriveValue(IOIOTruckValues.DRIVE_STOP);
+					updateGoButton(true);
+					updateLog(R.string.dest_reached);
+				}
 			} else {
 				Log.v(TAG, "Driving Forward");
+				mCount = 0;
 				mIOIOManager.setDriveValue(IOIOTruckValues.DRIVE_FORWARD);
 			}
 		else{
