@@ -20,7 +20,7 @@ public class Debug {
 	/**
 	 * Sets the size of the radius of a user selected point in km
 	 */
-	public static final float RADIUS = .010f;
+	public static final float RADIUS = .005f;
 
 	/**
 	 * Sets the amount of kilometers that a radius needs to be penetrated by an accuracy circle in km

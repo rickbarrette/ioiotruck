@@ -11,6 +11,7 @@ import android.os.Bundle;
 import android.os.PowerManager;
 import android.os.PowerManager.WakeLock;
 import android.support.v4.app.FragmentActivity;
+import android.util.Log;
 import android.view.View;
 import android.view.View.OnClickListener;
 import android.widget.Button;
@@ -263,13 +264,18 @@ public class NavigationActivity extends FragmentActivity implements CompassListe
 		 */
 		if(mPoint != null)
 			if(GeoUtils.isIntersecting(point, (float) (accuracy / 1E3), mPoint, Debug.RADIUS, Debug.FUDGE_FACTOR)) {
+				Log.v(TAG, "Dest Reached, Stopping");
 				mIOIOManager.setDriveValue(IOIOTruckValues.DRIVE_STOP);
 				updateGoButton(true);
 				updateLog(R.string.dest_reached);
-			} else 
+			} else {
+				Log.v(TAG, "Driving Forward");
 				mIOIOManager.setDriveValue(IOIOTruckValues.DRIVE_FORWARD);
-		else 
+			}
+		else{
+			Log.v(TAG, "Lost GPS signal, stopping");
 			mIOIOManager.setDriveValue(IOIOTruckValues.DRIVE_STOP);
+		}
 
 	}
 	

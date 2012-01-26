@@ -59,13 +59,13 @@ public class IOIOTruckValues extends IOIOValues {
 	 * drive the truck forward
 	 * PWM value
 	 */
-	public static final int DRIVE_FORWARD = 1300;
+	public static final int DRIVE_FORWARD = 1000;
 	
 	/**
 	 * drive the truck in reverse
 	 * PWM value
 	 */
-	public static final int DRIVE_REVERSE = 1700;
+	public static final int DRIVE_REVERSE = 2000;
 
 	/**
 	 * IOIO port for the "shifter"
@@ -86,6 +86,5 @@ public class IOIOTruckValues extends IOIOValues {
 	 * Steering value to drive the robot left
 	 */
 	public static final int STEER_LEFT = 1300;
-
 
 }

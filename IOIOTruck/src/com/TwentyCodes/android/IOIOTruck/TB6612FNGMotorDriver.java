@@ -36,6 +36,7 @@ public class TB6612FNGMotorDriver {
 	 * @author ricky barrette
 	 */
 	public TB6612FNGMotorDriver(IOIO ioio, int pwmPin, int in1Pin, int in2Pin) throws ConnectionLostException {
+		Log.v(TAG, "Initializing TB6612FNG Motor Driver on ports: (pwm) "+ pwmPin +", (in1) "+ in1Pin +", (in2) "+in2Pin);
 		mPWM = ioio.openPwmOutput(pwmPin, PWM_FREQUENCY);
 		mPWM.setDutyCycle(0);
 		mIn1 = ioio.openDigitalOutput(in1Pin, false);
@@ -49,8 +50,6 @@ public class TB6612FNGMotorDriver {
 	 * @author ricky barrette
 	 */
 	public void setSpeed(float speed) throws ConnectionLostException {
-		if(Debug.DEBUG)
-			Log.v(TAG, "setSpeed(float): "+speed);
 		if(speed == 0) {
 			//stop
 			mIn1.write(false);
@@ -74,8 +73,6 @@ public class TB6612FNGMotorDriver {
 	 * @author ricky barrette
 	 */
 	public void setSpeed(int speed) throws ConnectionLostException {
-		if(Debug.DEBUG)
-			Log.v(TAG, "setSpeed(int): "+speed);
 		if(speed == 1500)
 			setSpeed(0f);
 		else if(speed < 1500)

@@ -31,8 +31,8 @@ public class IOIOTruckManager extends IOIOManager {
 	private static final String TAG = "IOIOTruckThread";
 	private Activity mActivity;
 	private IOIOTruckThreadListener mListener;
-	private int mLeftDriveValue;
-	private int mRightDriveValue;
+	private int mDriveValue;
+	private int mSteerValue;
 	private int mShifterValue;
 	private boolean mStatLedValue;
 	private TB6612FNGMotorDriver mLeftMotor;
@@ -60,8 +60,8 @@ public class IOIOTruckManager extends IOIOManager {
 	 */
 	private void arcadeDrive() throws ConnectionLostException {	
 		int left, right;	
-		left = (mLeftDriveValue + mRightDriveValue) /2;
-		right = (mLeftDriveValue - mRightDriveValue) / 2;
+		left = (mDriveValue + mSteerValue) /2;
+		right = (mDriveValue - mSteerValue) / 2;
 		
 		mLeftMotor.setSpeed(left);
 		mRightMotor.setSpeed(right + 1500);
@@ -71,7 +71,7 @@ public class IOIOTruckManager extends IOIOManager {
 	 * @return the mDriveValue
 	 */
 	public synchronized int getDriveValue() {
-		return mLeftDriveValue;
+		return mDriveValue;
 	}
 
 	/**
@@ -85,7 +85,7 @@ public class IOIOTruckManager extends IOIOManager {
 	 * @return the mSteerValue
 	 */
 	public synchronized int getSteerValue() {
-		return mRightDriveValue;
+		return mSteerValue;
 	}
 	
 	/**
@@ -155,7 +155,7 @@ public class IOIOTruckManager extends IOIOManager {
 	 * @param mDriveValue the mDriveValue to set
 	 */
 	public synchronized void setDriveValue(int mDriveValue) {
-		this.mLeftDriveValue = mDriveValue;
+		this.mDriveValue = mDriveValue;
 	}
 
 	/**
@@ -176,7 +176,7 @@ public class IOIOTruckManager extends IOIOManager {
 	 * @param mSteerValue the mSteerValue to set
 	 */
 	public synchronized void setSteerValue(int mSteerValue) {
-		this.mRightDriveValue = mSteerValue;
+		this.mSteerValue = mSteerValue;
 	}
 
 	/**
