@@ -6,7 +6,10 @@
  */
 package com.TwentyCodes.android.IOIOTruck;
 
+import android.content.Context;
 import android.os.Bundle;
+import android.os.PowerManager;
+import android.os.PowerManager.WakeLock;
 import android.support.v4.app.FragmentActivity;
 import android.view.View;
 import android.view.View.OnClickListener;
@@ -40,6 +43,7 @@ import com.google.android.maps.GeoPoint;
  */
 public class NavigationActivity extends FragmentActivity implements CompassListener, GeoPointLocationListener, LocationSelectedListener, OnClickListener, OnCheckedChangeListener, IOIOTruckThreadListener {
 	
+	private static final String TAG = "NavigationActivity";
 	private IOIOTruckManager mIOIOManager;
 	private MapFragment mMap;
 	private TextView mLog;
@@ -57,6 +61,7 @@ public class NavigationActivity extends FragmentActivity implements CompassListe
 	private TextView mAccuracyTextView;
 	private TextView mLastUpdateTextView;
 	private long mLast;
+	private WakeLock mWakeLock;
 	
 	/**
 	 * This thread will be used to update all the informational displays
@@ -291,12 +296,14 @@ public class NavigationActivity extends FragmentActivity implements CompassListe
 		try {
 			mIOIOManager.abort();
 		} catch (InterruptedException e) {
-			// TODO Auto-generated catch block
 			e.printStackTrace();
 		}
 		
 		if(mLoggerThread != null)
 			mLoggerThread.abort();
+		
+		if(mWakeLock.isHeld())
+			mWakeLock.release();
 		super.onPause();
 	}
 
@@ -314,6 +321,10 @@ public class NavigationActivity extends FragmentActivity implements CompassListe
 		mMap.setRadius((int) (Debug.RADIUS * 1E3));
 		mIOIOManager = new IOIOTruckManager(this, this);
 		mIOIOManager.start();
+		
+		PowerManager pm = (PowerManager) this.getSystemService(Context.POWER_SERVICE);
+		mWakeLock = pm.newWakeLock(PowerManager.SCREEN_DIM_WAKE_LOCK | PowerManager.ON_AFTER_RELEASE, TAG);
+		mWakeLock.acquire();
 	}
 	
 	/**
