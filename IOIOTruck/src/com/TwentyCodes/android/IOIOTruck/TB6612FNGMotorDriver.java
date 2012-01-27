@@ -1,6 +1,7 @@
 /**
  * IOIOMotorDriver.java
  * @date Jan 25, 2012
+ * @author Tamlyn Rhodes
  * @author ricky barrette
  * @author Twenty Codes, LLC
  */
@@ -13,7 +14,9 @@ import ioio.lib.api.PwmOutput;
 import ioio.lib.api.exception.ConnectionLostException;
 
 /**
- * This class is used to drive one of the (2) motors via the TB6612FNG motor driver from sparkfun. 
+ * This class is used to drive one of the (2) motors via the TB6612FNG motor driver from sparkfun.
+ * https://github.com/tamlyn/Billy-Robot/blob/master/src/org/tamlyn/billy/IOIOMotor.java 
+ * @author Tamlyn Rhodes
  * @author ricky barrette
  */
 public class TB6612FNGMotorDriver {
@@ -33,7 +36,7 @@ public class TB6612FNGMotorDriver {
 	 * @param in1Pin IOIO port number for the motor driver in1 pin
 	 * @param in2Pin IOIO port number for the motor driver in2 pin
 	 * @throws ConnectionLostException
-	 * @author ricky barrette
+	 * @author Tamlyn Rhodes
 	 */
 	public TB6612FNGMotorDriver(IOIO ioio, int pwmPin, int in1Pin, int in2Pin) throws ConnectionLostException {
 		Log.v(TAG, "Initializing TB6612FNG Motor Driver on ports: (pwm) "+ pwmPin +", (in1) "+ in1Pin +", (in2) "+in2Pin);
@@ -47,7 +50,7 @@ public class TB6612FNGMotorDriver {
 	 * Sets the speed of this motor
 	 * @param speed +/- 0.0 - 1.0
 	 * @throws ConnectionLostException
-	 * @author ricky barrette
+	 * @author Tamlyn Rhodes
 	 */
 	public void setSpeed(float speed) throws ConnectionLostException {
 		if(speed == 0) {
