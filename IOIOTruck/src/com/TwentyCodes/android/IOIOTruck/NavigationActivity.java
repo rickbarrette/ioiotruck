@@ -177,7 +177,7 @@ public class NavigationActivity extends FragmentActivity implements CompassListe
 	 * @author ricky barrette
 	 */
 	private void updateGoButton(final boolean isRun) {
-		mIOIOManager.setStatLedValue(!isRun);
+		mIOIOManager.setStatLedEnabled(!isRun);
 		runOnUiThread(new Runnable() {
 			@Override
 			public void run(){

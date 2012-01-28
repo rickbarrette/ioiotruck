@@ -158,7 +158,7 @@ public class TestActivity extends Activity implements JoystickMovedListener, OnS
 	 */
 	@Override
 	public void onCheckedChanged(CompoundButton buttonView, boolean isChecked) {
-			mIOIOManager.setStatLedValue(isChecked);
+			mIOIOManager.setStatLedEnabled(isChecked);
 	}
 
 	/**

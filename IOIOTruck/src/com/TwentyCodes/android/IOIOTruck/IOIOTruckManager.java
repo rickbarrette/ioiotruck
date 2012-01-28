@@ -35,7 +35,6 @@ public class IOIOTruckManager extends IOIOManager {
 	private int mDriveValue;
 	private int mSteerValue;
 	private int mShifterValue;
-	private boolean mStatLedValue;
 	private TB6612FNGMotorDriver mLeftMotor;
 	private TB6612FNGMotorDriver mRightMotor;
 	private PwmOutput mShifter;
@@ -90,13 +89,6 @@ public class IOIOTruckManager extends IOIOManager {
 	public synchronized int getSteerValue() {
 		return mSteerValue;
 	}
-	
-	/**
-	 * @return the mStatLedValue
-	 */
-	public synchronized boolean isStatLedValue() {
-		return mStatLedValue;
-	}
 
 	/**
 	 * Here we register and initialize each port
@@ -118,8 +110,8 @@ public class IOIOTruckManager extends IOIOManager {
 		/*
 		 * bumper switches in the front
 		 */
-		mLeftFrontBumber = ioio.openDigitalInput(IOIOTruckValues.LEFT_FRONT_BUMPER_PORT);
-		mRightFrontBumber = ioio.openDigitalInput(IOIOTruckValues.RIGHT_FRONT_BUMBER_PORT);
+		mLeftFrontBumber = ioio.openDigitalInput(IOIOTruckValues.LEFT_FRONT_BUMPER_PORT, DigitalInput.Spec.Mode.PULL_DOWN);
+		mRightFrontBumber = ioio.openDigitalInput(IOIOTruckValues.RIGHT_FRONT_BUMBER_PORT, DigitalInput.Spec.Mode.PULL_DOWN);
 	}
 
 	/**
@@ -139,31 +131,29 @@ public class IOIOTruckManager extends IOIOManager {
 	@Override
 	public void loop() throws ConnectionLostException, InterruptedException {
 		
-		this.setStatLedEnabled(mStatLedValue);
+		this.setStatLedEnabled(isStatLedEnabled());
 		
 		mShifter.setPulseWidth(mShifterValue);
-		
-		mMotorDriverStandBy.write(mStatLedValue);
 		
 		/*
 		 * we need to check our sensors before we can make a move. 
 		 */
 		if(mLeftFrontBumber.read()){
 			//TODO backup, spin right, drive forward
-			mLeftMotor.setSpeed(0);
-			mRightMotor.setSpeed(0);
+			setStatLedEnabled(false);
 		} else if(mRightFrontBumber.read()){
 			//TODO backup, spin left, drive forward
-			mLeftMotor.setSpeed(0);
-			mRightMotor.setSpeed(0);
-		} else
-
+			setStatLedEnabled(false);
+		}
+		
+		mMotorDriverStandBy.write(isStatLedEnabled());
+		
 		/*
 		 * if the autonomous routine is running
 		 * then drive the truck
 		 * else stop the truck
 		 */
-		if(mStatLedValue){
+		if(isStatLedEnabled()){
 			arcadeDrive();
 		}
 		else{				
@@ -175,29 +165,22 @@ public class IOIOTruckManager extends IOIOManager {
 	/**
 	 * @param mDriveValue the mDriveValue to set
 	 */
-	public synchronized void setDriveValue(int mDriveValue) {
-		this.mDriveValue = mDriveValue;
+	public synchronized void setDriveValue(int driveValue) {
+		mDriveValue = driveValue;
 	}
 
 	/**
 	 * @param mShifterValue the mShifterValue to set
 	 */
-	public synchronized void setShifterValue(int mShifterValue) {
-		this.mShifterValue = mShifterValue;
-	}
-
-	/**
-	 * @param mStatLedValue the mStatLedValue to set
-	 */
-	public synchronized void setStatLedValue(boolean mStatLedValue) {
-		this.mStatLedValue = mStatLedValue;
+	public synchronized void setShifterValue(int shifterValue) {
+		mShifterValue = shifterValue;
 	}
 
 	/**
 	 * @param mSteerValue the mSteerValue to set
 	 */
-	public synchronized void setSteerValue(int mSteerValue) {
-		this.mSteerValue = mSteerValue;
+	public synchronized void setSteerValue(int steerValue) {
+		mSteerValue = steerValue;
 	}
 
 	/**
