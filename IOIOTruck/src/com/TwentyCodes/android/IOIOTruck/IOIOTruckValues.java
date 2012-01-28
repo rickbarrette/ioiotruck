@@ -87,4 +87,14 @@ public class IOIOTruckValues extends IOIOValues {
 	 */
 	public static final int STEER_LEFT = 1300;
 
+	/**
+	 * IOIO port for the left front bumper switch
+	 */
+	public static final int LEFT_FRONT_BUMPER_PORT = 11;
+
+	/**
+	 * IOIO port for the right front bumper switch
+	 */
+	public static final int RIGHT_FRONT_BUMBER_PORT = 12;
+
 }

@@ -6,6 +6,7 @@
  */
 package com.TwentyCodes.android.IOIOTruck;
 
+import ioio.lib.api.DigitalInput;
 import ioio.lib.api.DigitalOutput;
 import ioio.lib.api.IOIO;
 import ioio.lib.api.PwmOutput;
@@ -39,6 +40,8 @@ public class IOIOTruckManager extends IOIOManager {
 	private TB6612FNGMotorDriver mRightMotor;
 	private PwmOutput mShifter;
 	private DigitalOutput mMotorDriverStandBy;
+	private DigitalInput mLeftFrontBumber;
+	private DigitalInput mRightFrontBumber;
 	
 	/**
 	 * Creates a new IOIOTruckThread
@@ -111,6 +114,12 @@ public class IOIOTruckManager extends IOIOManager {
 		
 		//enable the motor driver
 		mMotorDriverStandBy = ioio.openDigitalOutput(IOIOTruckValues.MOTOR_DRIVER_STANDBY, true);
+		
+		/*
+		 * bumper switches in the front
+		 */
+		mLeftFrontBumber = ioio.openDigitalInput(IOIOTruckValues.LEFT_FRONT_BUMPER_PORT);
+		mRightFrontBumber = ioio.openDigitalInput(IOIOTruckValues.RIGHT_FRONT_BUMBER_PORT);
 	}
 
 	/**
@@ -128,13 +137,26 @@ public class IOIOTruckManager extends IOIOManager {
 	 * @see com.TwentyCodes.android.ioio.IOIOThread#onUpdate()
 	 */
 	@Override
-	public void loop() throws ConnectionLostException {
+	public void loop() throws ConnectionLostException, InterruptedException {
 		
 		this.setStatLedEnabled(mStatLedValue);
 		
 		mShifter.setPulseWidth(mShifterValue);
 		
 		mMotorDriverStandBy.write(mStatLedValue);
+		
+		/*
+		 * we need to check our sensors before we can make a move. 
+		 */
+		if(mLeftFrontBumber.read()){
+			//TODO backup, spin right, drive forward
+			mLeftMotor.setSpeed(0);
+			mRightMotor.setSpeed(0);
+		} else if(mRightFrontBumber.read()){
+			//TODO backup, spin left, drive forward
+			mLeftMotor.setSpeed(0);
+			mRightMotor.setSpeed(0);
+		} else
 
 		/*
 		 * if the autonomous routine is running
@@ -148,7 +170,6 @@ public class IOIOTruckManager extends IOIOManager {
 			mLeftMotor.setSpeed(0);
 			mRightMotor.setSpeed(0);
 		}
-		
 	}
 
 	/**
