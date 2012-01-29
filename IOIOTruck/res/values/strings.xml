@@ -26,5 +26,6 @@
     <string name="no_gps_signal">No GPS signal at this time, please try agian</string>
     <string name="point_selected">Location Selected: </string>
     <string name="dest_reached">Destination reached</string>
+    <string name="camera_activity">Camera Activity</string>
 
 </resources>

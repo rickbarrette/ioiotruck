@@ -49,6 +49,7 @@ public class Main extends Activity implements OnClickListener {
         
         findViewById(R.id.test_activity_button).setOnClickListener(this);
         findViewById(R.id.nav_activity_button).setOnClickListener(this);
+        findViewById(R.id.camera_activity_button).setOnClickListener(this);
         
         /*
          * Version information textview
@@ -78,9 +79,16 @@ public class Main extends Activity implements OnClickListener {
 			case R.id.test_activity_button:
 				startActivity(new Intent(this, TestActivity.class));
 				break;
+				
 			case R.id.nav_activity_button:
 				startActivity(new Intent(this, NavigationActivity.class));
 				break;
+				
+			case R.id.camera_activity_button:
+				startActivity(new Intent(this, CameraActivity.class));
+				break;
+				
+					
 		}
 		
 	}

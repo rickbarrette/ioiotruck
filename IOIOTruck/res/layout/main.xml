@@ -42,6 +42,12 @@
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
         android:text="@string/nav_activity" />
+    
+    <Button
+        android:id="@+id/camera_activity_button"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:text="@string/camera_activity" />
 
     <RelativeLayout
         android:id="@+id/relativeLayout1"
