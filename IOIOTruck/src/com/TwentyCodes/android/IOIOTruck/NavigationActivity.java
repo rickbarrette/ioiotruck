@@ -155,6 +155,10 @@ public class NavigationActivity extends FragmentActivity implements CompassListe
 			case R.id.go_button:
 				updateGoButton();
 				break;
+
+			case R.id.map_button:
+				mMap.changeMapMode();
+				break;
 				
 			case R.id.mark_my_lcoation_button:
 				GeoPoint point = mMap.getUserLocation();
@@ -173,6 +177,7 @@ public class NavigationActivity extends FragmentActivity implements CompassListe
 				} else
 					
 				break;
+				
 		}
 	}
 
@@ -261,6 +266,7 @@ public class NavigationActivity extends FragmentActivity implements CompassListe
 		mGoButton.setOnClickListener(this);
 		findViewById(R.id.mark_my_lcoation_button).setOnClickListener(this);
 		findViewById(R.id.my_location_button).setOnClickListener(this);
+		findViewById(R.id.map_button).setOnClickListener(this);
 	}
 	
 	/**
