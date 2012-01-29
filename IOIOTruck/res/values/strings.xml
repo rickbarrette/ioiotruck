@@ -21,7 +21,7 @@
     <string name="by">by Twenty Codes, LLC</string>
     <string name="version">Version</string>
     <string name="about">About</string>
-    <string name="about_msg">This application is used to demonstrate the power of an Android phone coupled with the IOIO bord can autonomously drive a remote controlled truck or car to a point selected on a map.\n There is two parts of this application, the first is a Funtion Test activity and the second is the Navigation activity. The Function Test activity allows you to test all the featuers of your rc truck and the IOIO. The Navigation activity allows you to select a point on the map and hit Go. The truck will drive to the point selected on the map and stop once it is there. \n\nSpeed controller Port: 3 \nSteering servo Port: 5 \nShifter servo Port: 4</string>
+    <string name="about_msg">This application is used to demonstrate the power of an Android phone coupled with the IOIO bord can autonomously drive a robot to a point selected on a map.\n There is two parts of this application, the first is a Funtion Test activity and the second is the Navigation activity. The Function Test activity allows you to test all the features of your rc truck and the IOIO. The Navigation activity allows you to select a point on the map and hit Go. The truck will drive to the point selected on the map and stop once it is there.\n\nShifter servo Port: 3\n\nTB6612FNG Motor Driver:\nPWMa: 4\nAin2: 5\nAin1: 6\nstby: 7\nPWMb: 8\nBin1: 9\nBin2: 10\n\nLeft front bumper switch: 11\nRight fornt bumper switch: 12</string>
     <string name="build">build</string>
     <string name="no_gps_signal">No GPS signal at this time, please try agian</string>
     <string name="point_selected">Location Selected: </string>
