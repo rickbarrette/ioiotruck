@@ -21,6 +21,8 @@
  */
 package com.TwentyCodes.android.IOIOTruck;
 
+import java.util.ArrayList;
+
 import android.content.Context;
 import android.os.Bundle;
 import android.os.PowerManager;
@@ -42,7 +44,10 @@ import com.TwentyCodes.android.IOIOTruck.IOIOTruckManager.IOIOTruckThreadListene
 import com.TwentyCodes.android.location.CompassListener;
 import com.TwentyCodes.android.location.GeoPointLocationListener;
 import com.TwentyCodes.android.location.GeoUtils;
-import com.TwentyCodes.android.location.LocationSelectedListener;
+import com.TwentyCodes.android.location.OnLocationSelectedListener;
+import com.TwentyCodes.android.overlays.DirectionsOverlay;
+import com.TwentyCodes.android.overlays.DirectionsOverlay.OnDirectionsCompleteListener;
+import com.TwentyCodes.android.overlays.PathOverlay;
 import com.google.android.maps.GeoPoint;
 
 
@@ -57,7 +62,7 @@ import com.google.android.maps.GeoPoint;
  *  + drive the truck forward or reverse to best navigate to the selected point
  * @author ricky barrette
  */
-public class NavigationActivity extends FragmentActivity implements CompassListener, GeoPointLocationListener, LocationSelectedListener, OnClickListener, OnCheckedChangeListener, IOIOTruckThreadListener {
+public class NavigationActivity extends FragmentActivity implements CompassListener, GeoPointLocationListener, OnLocationSelectedListener, OnClickListener, OnCheckedChangeListener, IOIOTruckThreadListener, OnDirectionsCompleteListener {
 	
 	private static final String TAG = "NavigationActivity";
 	private IOIOTruckManager mIOIOManager;
@@ -79,6 +84,9 @@ public class NavigationActivity extends FragmentActivity implements CompassListe
 	private long mLast;
 	private WakeLock mWakeLock;
 	private int mCount;
+	private ArrayList<GeoPoint> mPoints;
+	private int mIndex = 0;
+	private GeoPoint mDestPoint;
 	
 	/**
 	 * This thread will be used to update all the informational displays
@@ -106,6 +114,8 @@ public class NavigationActivity extends FragmentActivity implements CompassListe
 							+"\nSteering: "+mIOIOManager.getSteerValue()
 							+"\nBearing: "+mBearing
 							+"\nisRunning: "+isRunning);
+							if(mPoints != null)
+								updateLog("Point = "+mIndex +" of "+ mPoints.size());
 					
 					updateLastUpdateTextView();
 					
@@ -282,19 +292,35 @@ public class NavigationActivity extends FragmentActivity implements CompassListe
 		mDistance = updateProgress(point);
 		
 		/*
-		 * here we will update the progress bar
-		 * 
+		 * if we have a destination, check to see if we are there yet
 		 */
 		if(mPoint != null)
 			if(GeoUtils.isIntersecting(point, (float) (accuracy / 1E3), mPoint, Debug.RADIUS, Debug.FUDGE_FACTOR)) {
-				
 				mCount++;
 				
+				/*
+				 * if we get 5 positives, we are at our waypoint/dest
+				 */
 				if(mCount > 5){
-					Log.v(TAG, "Dest Reached, Stopping");
-					mIOIOManager.setDriveValue(IOIOTruckValues.DRIVE_STOP);
-					updateGoButton(true);
-					updateLog(R.string.dest_reached);
+					
+					/*
+					 * if ther points list is null, or there are no more points
+					 */
+					if(mPoints == null || mIndex == mPoints.size()+1){
+						mIOIOManager.setDriveValue(IOIOTruckValues.DRIVE_STOP);
+						updateGoButton(true);
+						updateLog(R.string.dest_reached);
+					} else {
+						mIndex ++;
+						
+						if(mIndex <= mPoints.size()+1) {
+							updateLog("last Waypoint reached, moving to dest");
+							mPoint = mPoints.get(mIndex);
+						} else {
+							updateLog("Waypoint reached, moving to next");
+							mPoint = mDestPoint;
+						}
+					}
 				}
 			} else {
 				Log.v(TAG, "Driving Forward");
@@ -315,9 +341,11 @@ public class NavigationActivity extends FragmentActivity implements CompassListe
 	 */
 	@Override
 	public void onLocationSelected(GeoPoint point) {
-		mPoint = point;
+		mDestPoint = point;
 		mDistance = updateProgress(mMap.getUserLocation());
 		updateLog(getString(R.string.point_selected)+point.toString());
+		mIndex = 0;
+		mCount = 0;
 	}
 
 	/**
@@ -353,7 +381,9 @@ public class NavigationActivity extends FragmentActivity implements CompassListe
 		mMap.setCompassListener(this);
 		mMap.setGeoPointLocationListener(this);
 		mMap.setLocationSelectedListener(this);
+		mMap.setDirectionsCompleteListener(this);
 		mMap.setRadius((int) (Debug.RADIUS * 1E3));
+		mMap.enableGPSProgess();
 		mIOIOManager = new IOIOTruckManager(this, this);
 		mIOIOManager.start();
 		
@@ -420,6 +450,26 @@ public class NavigationActivity extends FragmentActivity implements CompassListe
 	@Override
 	public void onLogUpdate(String log) {
 		updateLog(log);
+	}
+
+	/**
+	 * called when the directions overlay is generated
+	 * (non-Javadoc)
+	 * @see com.TwentyCodes.android.overlays.DirectionsOverlay.OnDirectionsCompleteListener#onDirectionsComplete(com.TwentyCodes.android.overlays.DirectionsOverlay)
+	 */
+	@Override
+	public void onDirectionsComplete(DirectionsOverlay directionsOverlay) {
+		ArrayList<GeoPoint> points = new ArrayList<GeoPoint>();
+		for(PathOverlay item : directionsOverlay.getPath())
+			if(item.getEndPoint() != null)
+				points.add(item.getEndPoint());
+		mPoints = points;
+		mPoint = points.get(points.size()-1);
+	}
+
+	@Override
+	public void onFirstFix(boolean isFirstFix) {
+		mMap.disableGPSProgess();
 	}
 	
 }

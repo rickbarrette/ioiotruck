@@ -21,12 +21,19 @@
  */
 package com.TwentyCodes.android.IOIOTruck;
 
+import java.io.IOException;
+
+import org.apache.http.client.ClientProtocolException;
+import org.json.JSONException;
+
 import android.util.Log;
 
-import com.TwentyCodes.android.location.LocationSelectedListener;
+import com.TwentyCodes.android.fragments.UserOverlayMapFragment;
 import com.TwentyCodes.android.location.MapView;
-import com.TwentyCodes.android.location.RadiusOverlay;
-import com.TwentyCodes.android.location.UserOverlayMapFragment;
+import com.TwentyCodes.android.location.OnLocationSelectedListener;
+import com.TwentyCodes.android.overlays.DirectionsOverlay;
+import com.TwentyCodes.android.overlays.DirectionsOverlay.OnDirectionsCompleteListener;
+import com.TwentyCodes.android.overlays.RadiusOverlay;
 import com.google.android.maps.GeoPoint;
 
 /**
@@ -35,12 +42,16 @@ import com.google.android.maps.GeoPoint;
  * Specifically this map view will allow user to select a point on the map via RadiusOverlay
  * @author ricky barrette
  */
-public class MapFragment extends UserOverlayMapFragment implements LocationSelectedListener {
+public class MapFragment extends UserOverlayMapFragment implements OnLocationSelectedListener, OnDirectionsCompleteListener {
 	
 	private final String TAG = "MapFragment";
 
 	private RadiusOverlay mRadiusOverlay;
-	private LocationSelectedListener mLocationSelectedListener;
+	private OnLocationSelectedListener mLocationSelectedListener;
+
+	private OnDirectionsCompleteListener mDirectionsCompleteListener;
+
+	private DirectionsOverlay mDirectionsOverlay;
 
 	/**
 	 * Creates a new MapFragment
@@ -48,6 +59,18 @@ public class MapFragment extends UserOverlayMapFragment implements LocationSelec
 	 */
 	public MapFragment() {
 		super();
+	}
+
+	/**
+	 * Called whrn the directions overlay is finished getting the directions.
+	 * (non-Javadoc)
+	 * @see com.TwentyCodes.android.overlays.DirectionsOverlay.OnDirectionsCompleteListener#onDirectionsComplete(com.TwentyCodes.android.overlays.DirectionsOverlay)
+	 */
+	@Override
+	public void onDirectionsComplete(DirectionsOverlay directionsOverlay) {
+		mDirectionsOverlay = directionsOverlay;
+		if(mDirectionsCompleteListener != null)
+			mDirectionsCompleteListener.onDirectionsComplete(directionsOverlay);
 	}
 
 	/**
@@ -73,7 +96,7 @@ public class MapFragment extends UserOverlayMapFragment implements LocationSelec
 		} else if(Debug.DEBUG)
 			Log.d(TAG, "onLocationSelected() Location was null");
 	}
-
+	
 	/**
 	 * (non-Javadoc)
 	 * @see com.TwentyCodes.android.location.UserOverlayMapFragment#onMapViewCreate(com.TwentyCodes.android.location.MapView)
@@ -88,13 +111,55 @@ public class MapFragment extends UserOverlayMapFragment implements LocationSelec
 	}
 	
 	/**
+	 * (non-Javadoc)
+	 * @see com.TwentyCodes.android.fragments.UserOverlayMapFragment#setDestination(com.google.android.maps.GeoPoint)
+	 */
+	@Override
+	public void setDestination(final GeoPoint destination) {
+		if(mDirectionsOverlay != null)
+			mDirectionsOverlay.removePath();
+		
+		if(mDirectionsCompleteListener != null)
+			new Thread( new Runnable(){
+				@Override
+				public void run(){
+					try {
+						new DirectionsOverlay(getMap(), getUserLocation(), destination, MapFragment.this);
+					} catch (IllegalStateException e) {
+						// TODO Auto-generated catch block
+						e.printStackTrace();
+					} catch (ClientProtocolException e) {
+						// TODO Auto-generated catch block
+						e.printStackTrace();
+					} catch (IOException e) {
+						// TODO Auto-generated catch block
+						e.printStackTrace();
+					} catch (JSONException e) {
+						// TODO Auto-generated catch block
+						e.printStackTrace();
+					}
+				}
+			}).start();
+		super.setDestination(destination);
+	}
+	
+	/**
+	 * sets the distener for the directions overlay
 	 * @param listener
 	 * @author ricky barrette
 	 */
-	public void setLocationSelectedListener(LocationSelectedListener listener){
-		mLocationSelectedListener = listener;
+	public void setDirectionsCompleteListener(OnDirectionsCompleteListener listener){
+		mDirectionsCompleteListener = listener;
 	}
 	
+	/**
+	 * @param listener
+	 * @author ricky barrette
+	 */
+	public void setLocationSelectedListener(OnLocationSelectedListener listener){
+		mLocationSelectedListener = listener;
+	}
+
 	/**
 	 * @param radius meters
 	 * @author ricky barrette
