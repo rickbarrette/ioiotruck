@@ -45,12 +45,9 @@ import com.google.android.maps.GeoPoint;
 public class MapFragment extends UserOverlayMapFragment implements OnLocationSelectedListener, OnDirectionsCompleteListener {
 	
 	private final String TAG = "MapFragment";
-
 	private RadiusOverlay mRadiusOverlay;
 	private OnLocationSelectedListener mLocationSelectedListener;
-
 	private OnDirectionsCompleteListener mDirectionsCompleteListener;
-
 	private DirectionsOverlay mDirectionsOverlay;
 
 	/**
@@ -80,6 +77,8 @@ public class MapFragment extends UserOverlayMapFragment implements OnLocationSel
 	 */
 	@Override
 	public void onLocationSelected(GeoPoint point) {
+		
+		removePath();
 		
 		setDestination(point);
 		
@@ -111,14 +110,20 @@ public class MapFragment extends UserOverlayMapFragment implements OnLocationSel
 	}
 	
 	/**
+	 * Removes the path if displayed 
+	 * @author ricky barrette
+	 */
+	public void removePath(){
+		if(mDirectionsOverlay != null)
+			mDirectionsOverlay.removePath();
+	}
+	
+	/**
 	 * (non-Javadoc)
 	 * @see com.TwentyCodes.android.fragments.UserOverlayMapFragment#setDestination(com.google.android.maps.GeoPoint)
 	 */
 	@Override
-	public void setDestination(final GeoPoint destination) {
-		if(mDirectionsOverlay != null)
-			mDirectionsOverlay.removePath();
-		
+	public void setDestination(final GeoPoint destination) {	
 		if(mDirectionsCompleteListener != null)
 			new Thread( new Runnable(){
 				@Override

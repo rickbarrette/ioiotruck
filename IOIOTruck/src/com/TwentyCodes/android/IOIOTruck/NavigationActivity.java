@@ -24,6 +24,7 @@ package com.TwentyCodes.android.IOIOTruck;
 import java.util.ArrayList;
 
 import android.content.Context;
+import android.graphics.Color;
 import android.os.Bundle;
 import android.os.PowerManager;
 import android.os.PowerManager.WakeLock;
@@ -63,30 +64,6 @@ import com.google.android.maps.GeoPoint;
  * @author ricky barrette
  */
 public class NavigationActivity extends FragmentActivity implements CompassListener, GeoPointLocationListener, OnLocationSelectedListener, OnClickListener, OnCheckedChangeListener, IOIOTruckThreadListener, OnDirectionsCompleteListener {
-	
-	private static final String TAG = "NavigationActivity";
-	private IOIOTruckManager mIOIOManager;
-	private MapFragment mMap;
-	private TextView mLog;
-	private GeoPoint mPoint;
-	private ProgressBar mProgress;
-	private int mMaxDistance = 0; //meters
-	private boolean isRunning = false;
-	private Button mGoButton;
-	private float mBearing;
-	private ScrollView mScrollView;
-
-	private boolean isScrollingEnabled = true;
-	private int mDistance;
-	private LogUpdater mLoggerThread;
-	private TextView mAccuracyTextView;
-	private TextView mLastUpdateTextView;
-	private long mLast;
-	private WakeLock mWakeLock;
-	private int mCount;
-	private ArrayList<GeoPoint> mPoints;
-	private int mIndex = 0;
-	private GeoPoint mDestPoint;
 	
 	/**
 	 * This thread will be used to update all the informational displays
@@ -143,6 +120,29 @@ public class NavigationActivity extends FragmentActivity implements CompassListe
 		}
 			
 	}
+	private static final String TAG = "NavigationActivity";
+	private IOIOTruckManager mIOIOManager;
+	private MapFragment mMap;
+	private TextView mLog;
+	private GeoPoint mPoint;
+	private ProgressBar mProgress;
+	private int mMaxDistance = 0; //meters
+	private boolean isRunning = false;
+	private Button mGoButton;
+	private float mBearing;
+	private ScrollView mScrollView;
+	private boolean isScrollingEnabled = true;
+	private int mDistance;
+	private LogUpdater mLoggerThread;
+	private TextView mAccuracyTextView;
+	private TextView mLastUpdateTextView;
+	private long mLast;
+	private WakeLock mWakeLock;
+	private int mCount;
+	private ArrayList<GeoPoint> mPoints;
+	private int mIndex = 0;
+	private GeoPoint mDestPoint;
+	private ArrayList<PathOverlay> mWayPoints;
 
 	/**
 	 * Called when the scrolling switch is checked
@@ -192,44 +192,6 @@ public class NavigationActivity extends FragmentActivity implements CompassListe
 	}
 
 	/**
-	 * updates the go/stop button based on isRunning
-	 * thread safe 
-	 * @author ricky barrette
-	 */
-	private void updateGoButton() {
-		updateGoButton(isRunning);
-	}
-	
-	/**
-	 * Sets the go/stop button to the provided value
-	 * thread safe
-	 * @param isRunnuing true = stop, false = go
-	 * @author ricky barrette
-	 */
-	private void updateGoButton(final boolean isRun) {
-		mIOIOManager.setStatLedEnabled(!isRun);
-		runOnUiThread(new Runnable() {
-			@Override
-			public void run(){
-				if(isRun){
-					mCount = 0;
-					mGoButton.setText(R.string.go);
-					isRunning = false;
-					updateLog(R.string.stop);
-					if(mLoggerThread != null)
-						mLoggerThread.abort();
-				} else {
-					mGoButton.setText(R.string.stop);
-					isRunning = true;
-					updateLog(R.string.go);
-					mLoggerThread = new LogUpdater();
-					mLoggerThread.start();
-				}
-			}
-		});
-	}
-
-	/**
 	 * Called when there is an update from the compass
 	 * (non-Javadoc)
 	 * @see com.TwentyCodes.android.location.CompassListener#onCompassUpdate(float)
@@ -249,7 +211,7 @@ public class NavigationActivity extends FragmentActivity implements CompassListe
 		
 		mBearing = bearing;
 	}
-
+	
 	/**
 	 * (non-Javadoc)
 	 * @see android.support.v4.app.FragmentActivity#onCreate(android.os.Bundle)
@@ -277,6 +239,39 @@ public class NavigationActivity extends FragmentActivity implements CompassListe
 		findViewById(R.id.mark_my_lcoation_button).setOnClickListener(this);
 		findViewById(R.id.my_location_button).setOnClickListener(this);
 		findViewById(R.id.map_button).setOnClickListener(this);
+	}
+
+	/**
+	 * called when the directions overlay is generated
+	 * (non-Javadoc)
+	 * @see com.TwentyCodes.android.overlays.DirectionsOverlay.OnDirectionsCompleteListener#onDirectionsComplete(com.TwentyCodes.android.overlays.DirectionsOverlay)
+	 */
+	@Override
+	public void onDirectionsComplete(DirectionsOverlay directionsOverlay) {
+		ArrayList<PathOverlay> path = directionsOverlay.getPath();
+		
+		if(path.size() > 0){
+			mWayPoints = new ArrayList<PathOverlay>();
+			ArrayList<GeoPoint> points = new ArrayList<GeoPoint>();
+			points.add(path.get(0).getStartPoint());
+			for(PathOverlay item : path)
+				if(item.getEndPoint() != null) {
+					points.add(item.getEndPoint());
+					mWayPoints.add(new PathOverlay(item.getEndPoint(), 5, Color.GRAY));
+				}
+		
+			mPoints = points;
+			mPoint = points.get(0);
+			mMap.setDestination(mPoint);
+			mWayPoints.add(new PathOverlay(mPoint, 5, Color.MAGENTA));
+			mMap.getMap().getOverlays().addAll(mWayPoints);
+			mWayPoints.addAll(path);
+		}
+	}
+
+	@Override
+	public void onFirstFix(boolean isFirstFix) {
+		mMap.disableGPSProgess();
 	}
 	
 	/**
@@ -313,13 +308,18 @@ public class NavigationActivity extends FragmentActivity implements CompassListe
 					} else {
 						mIndex ++;
 						
-						if(mIndex <= mPoints.size()+1) {
+						if(mIndex <= mPoints.size()) {
 							updateLog("last Waypoint reached, moving to dest");
 							mPoint = mPoints.get(mIndex);
 						} else {
 							updateLog("Waypoint reached, moving to next");
 							mPoint = mDestPoint;
 						}
+						
+						/*
+						 * we have to notify the compass that the point has changed
+						 */
+						mMap.setDestination(mPoint);
 					}
 				}
 			} else {
@@ -341,11 +341,23 @@ public class NavigationActivity extends FragmentActivity implements CompassListe
 	 */
 	@Override
 	public void onLocationSelected(GeoPoint point) {
+		if(mWayPoints != null)
+			mMap.getMap().getOverlays().removeAll(mWayPoints);
 		mDestPoint = point;
 		mDistance = updateProgress(mMap.getUserLocation());
 		updateLog(getString(R.string.point_selected)+point.toString());
 		mIndex = 0;
 		mCount = 0;
+	}
+
+	/**
+	 * Called when the IOIOTruckThread has a log it wants to display
+	 * (non-Javadoc)
+	 * @see com.TwentyCodes.android.IOIOTruck.IOIOTruckManager.IOIOTruckThreadListener#onLogUpdate(java.lang.String)
+	 */
+	@Override
+	public void onLogUpdate(String log) {
+		updateLog(log);
 	}
 
 	/**
@@ -369,7 +381,7 @@ public class NavigationActivity extends FragmentActivity implements CompassListe
 			mWakeLock.release();
 		super.onPause();
 	}
-
+	
 	/**
 	 * (non-Javadoc)
 	 * @see android.support.v4.app.FragmentActivity#onResume()
@@ -391,7 +403,45 @@ public class NavigationActivity extends FragmentActivity implements CompassListe
 		mWakeLock = pm.newWakeLock(PowerManager.SCREEN_DIM_WAKE_LOCK | PowerManager.ON_AFTER_RELEASE, TAG);
 		mWakeLock.acquire();
 	}
-	
+
+	/**
+	 * updates the go/stop button based on isRunning
+	 * thread safe 
+	 * @author ricky barrette
+	 */
+	private void updateGoButton() {
+		updateGoButton(isRunning);
+	}
+
+	/**
+	 * Sets the go/stop button to the provided value
+	 * thread safe
+	 * @param isRunnuing true = stop, false = go
+	 * @author ricky barrette
+	 */
+	private void updateGoButton(final boolean isRun) {
+		mIOIOManager.setStatLedEnabled(!isRun);
+		runOnUiThread(new Runnable() {
+			@Override
+			public void run(){
+				if(isRun){
+					mCount = 0;
+					mGoButton.setText(R.string.go);
+					isRunning = false;
+					updateLog(R.string.stop);
+					if(mLoggerThread != null)
+						mLoggerThread.abort();
+				} else {
+					mGoButton.setText(R.string.stop);
+					isRunning = true;
+					updateLog(R.string.go);
+					mLoggerThread = new LogUpdater();
+					mLoggerThread.start();
+				}
+			}
+		});
+	}
+
 	/**
 	 * updates the log with the provided string res
 	 * thread safe
@@ -440,36 +490,6 @@ public class NavigationActivity extends FragmentActivity implements CompassListe
 		}		
 		mProgress.setProgress(distance);
 		return distance;
-	}
-
-	/**
-	 * Called when the IOIOTruckThread has a log it wants to display
-	 * (non-Javadoc)
-	 * @see com.TwentyCodes.android.IOIOTruck.IOIOTruckManager.IOIOTruckThreadListener#onLogUpdate(java.lang.String)
-	 */
-	@Override
-	public void onLogUpdate(String log) {
-		updateLog(log);
-	}
-
-	/**
-	 * called when the directions overlay is generated
-	 * (non-Javadoc)
-	 * @see com.TwentyCodes.android.overlays.DirectionsOverlay.OnDirectionsCompleteListener#onDirectionsComplete(com.TwentyCodes.android.overlays.DirectionsOverlay)
-	 */
-	@Override
-	public void onDirectionsComplete(DirectionsOverlay directionsOverlay) {
-		ArrayList<GeoPoint> points = new ArrayList<GeoPoint>();
-		for(PathOverlay item : directionsOverlay.getPath())
-			if(item.getEndPoint() != null)
-				points.add(item.getEndPoint());
-		mPoints = points;
-		mPoint = points.get(points.size()-1);
-	}
-
-	@Override
-	public void onFirstFix(boolean isFirstFix) {
-		mMap.disableGPSProgess();
 	}
 	
 }
