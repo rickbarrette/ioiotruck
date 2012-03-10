@@ -42,7 +42,7 @@ import com.TwentyCodes.android.IOIOTruck.IOIOTruckManager.IOIOTruckThreadListene
 import com.TwentyCodes.android.location.CompassListener;
 import com.TwentyCodes.android.location.GeoPointLocationListener;
 import com.TwentyCodes.android.location.GeoUtils;
-import com.TwentyCodes.android.location.LocationSelectedListener;
+import com.TwentyCodes.android.location.OnLocationSelectedListener;
 import com.google.android.maps.GeoPoint;
 
 
@@ -57,7 +57,7 @@ import com.google.android.maps.GeoPoint;
  *  + drive the truck forward or reverse to best navigate to the selected point
  * @author ricky barrette
  */
-public class NavigationActivity extends FragmentActivity implements CompassListener, GeoPointLocationListener, LocationSelectedListener, OnClickListener, OnCheckedChangeListener, IOIOTruckThreadListener {
+public class NavigationActivity extends FragmentActivity implements CompassListener, GeoPointLocationListener, OnLocationSelectedListener, OnClickListener, OnCheckedChangeListener, IOIOTruckThreadListener {
 	
 	private static final String TAG = "NavigationActivity";
 	private IOIOTruckManager mIOIOManager;
@@ -420,6 +420,12 @@ public class NavigationActivity extends FragmentActivity implements CompassListe
 	@Override
 	public void onLogUpdate(String log) {
 		updateLog(log);
+	}
+
+	@Override
+	public void onFirstFix(boolean isFirstFix) {
+		// TODO Auto-generated method stub
+		
 	}
 	
 }

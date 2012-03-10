@@ -23,10 +23,9 @@ package com.TwentyCodes.android.IOIOTruck;
 
 import android.util.Log;
 
-import com.TwentyCodes.android.location.LocationSelectedListener;
 import com.TwentyCodes.android.location.MapView;
-import com.TwentyCodes.android.location.RadiusOverlay;
-import com.TwentyCodes.android.location.UserOverlayMapFragment;
+import com.TwentyCodes.android.location.OnLocationSelectedListener;
+import com.TwentyCodes.android.overlays.RadiusOverlay;
 import com.google.android.maps.GeoPoint;
 
 /**
@@ -35,12 +34,12 @@ import com.google.android.maps.GeoPoint;
  * Specifically this map view will allow user to select a point on the map via RadiusOverlay
  * @author ricky barrette
  */
-public class MapFragment extends UserOverlayMapFragment implements LocationSelectedListener {
+public class MapFragment extends com.TwentyCodes.android.fragments.UserOverlayMapFragment implements OnLocationSelectedListener {
 	
 	private final String TAG = "MapFragment";
 
 	private RadiusOverlay mRadiusOverlay;
-	private LocationSelectedListener mLocationSelectedListener;
+	private OnLocationSelectedListener mLocationSelectedListener;
 
 	/**
 	 * Creates a new MapFragment
@@ -91,7 +90,7 @@ public class MapFragment extends UserOverlayMapFragment implements LocationSelec
 	 * @param listener
 	 * @author ricky barrette
 	 */
-	public void setLocationSelectedListener(LocationSelectedListener listener){
+	public void setLocationSelectedListener(OnLocationSelectedListener listener){
 		mLocationSelectedListener = listener;
 	}
 	
