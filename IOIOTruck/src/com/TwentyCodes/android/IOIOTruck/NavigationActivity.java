@@ -280,7 +280,7 @@ public class NavigationActivity extends FragmentActivity implements CompassListe
 	 * @see com.TwentyCodes.android.location.GeoPointLocationListener#onLocationChanged(com.google.android.maps.GeoPoint, int)
 	 */
 	@Override
-	public void onLocationChanged(GeoPoint point, int accuracy) {
+	public synchronized void onLocationChanged(GeoPoint point, int accuracy) {
 		mLast = System.currentTimeMillis();
 		mAccuracyTextView.setText(accuracy+getString(R.string.m));
 		
@@ -301,18 +301,22 @@ public class NavigationActivity extends FragmentActivity implements CompassListe
 					/*
 					 * if ther points list is null, or there are no more points
 					 */
-					if(mPoints == null || mIndex == mPoints.size()+1){
+					if(mPoints == null || mIndex == mPoints.size()){
 						mIOIOManager.setDriveValue(IOIOTruckValues.DRIVE_STOP);
 						updateGoButton(true);
 						updateLog(R.string.dest_reached);
 					} else {
 						mIndex ++;
 						
-						if(mIndex <= mPoints.size()) {
-							updateLog("last Waypoint reached, moving to dest");
+						/*
+						 * if there are more waypoints, then move on to the next
+						 * otherwise move on to the dest
+						 */
+						if(mIndex < mPoints.size()) {
+							updateLog("Waypoint reached, moving to next");
 							mPoint = mPoints.get(mIndex);
 						} else {
-							updateLog("Waypoint reached, moving to next");
+							updateLog("last Waypoint reached, moving to dest");
 							mPoint = mDestPoint;
 						}
 						
