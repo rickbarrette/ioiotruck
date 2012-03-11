@@ -21,10 +21,18 @@
  */
 package com.TwentyCodes.android.IOIOTruck;
 
+import java.io.IOException;
+
+import org.apache.http.client.ClientProtocolException;
+import org.json.JSONException;
+
 import android.util.Log;
 
+import com.TwentyCodes.android.fragments.UserOverlayMapFragment;
 import com.TwentyCodes.android.location.MapView;
 import com.TwentyCodes.android.location.OnLocationSelectedListener;
+import com.TwentyCodes.android.overlays.DirectionsOverlay;
+import com.TwentyCodes.android.overlays.DirectionsOverlay.OnDirectionsCompleteListener;
 import com.TwentyCodes.android.overlays.RadiusOverlay;
 import com.google.android.maps.GeoPoint;
 
@@ -34,12 +42,13 @@ import com.google.android.maps.GeoPoint;
  * Specifically this map view will allow user to select a point on the map via RadiusOverlay
  * @author ricky barrette
  */
-public class MapFragment extends com.TwentyCodes.android.fragments.UserOverlayMapFragment implements OnLocationSelectedListener {
+public class MapFragment extends UserOverlayMapFragment implements OnLocationSelectedListener, OnDirectionsCompleteListener {
 	
 	private final String TAG = "MapFragment";
-
 	private RadiusOverlay mRadiusOverlay;
 	private OnLocationSelectedListener mLocationSelectedListener;
+	private OnDirectionsCompleteListener mDirectionsCompleteListener;
+	private DirectionsOverlay mDirectionsOverlay;
 
 	/**
 	 * Creates a new MapFragment
@@ -50,12 +59,48 @@ public class MapFragment extends com.TwentyCodes.android.fragments.UserOverlayMa
 	}
 
 	/**
+	 * Called whrn the directions overlay is finished getting the directions.
+	 * (non-Javadoc)
+	 * @see com.TwentyCodes.android.overlays.DirectionsOverlay.OnDirectionsCompleteListener#onDirectionsComplete(com.TwentyCodes.android.overlays.DirectionsOverlay)
+	 */
+	@Override
+	public void onDirectionsComplete(DirectionsOverlay directionsOverlay) {
+		mDirectionsOverlay = directionsOverlay;
+		if(mDirectionsCompleteListener != null)
+			mDirectionsCompleteListener.onDirectionsComplete(directionsOverlay);
+	}
+
+	/**
 	 * Called when a point is selected on the map 
 	 * (non-Javadoc)
 	 * @see com.TwentyCodes.android.location.LocationSelectedListener#onLocationSelected(com.google.android.maps.GeoPoint)
 	 */
 	@Override
-	public void onLocationSelected(GeoPoint point) {
+	public void onLocationSelected(final GeoPoint point) {
+		
+		if(mDirectionsCompleteListener != null)
+			new Thread( new Runnable(){
+				@Override
+				public void run(){
+					try {
+						new DirectionsOverlay(getMap(), getUserLocation(), point, MapFragment.this);
+					} catch (IllegalStateException e) {
+						// TODO Auto-generated catch block
+						e.printStackTrace();
+					} catch (ClientProtocolException e) {
+						// TODO Auto-generated catch block
+						e.printStackTrace();
+					} catch (IOException e) {
+						// TODO Auto-generated catch block
+						e.printStackTrace();
+					} catch (JSONException e) {
+						// TODO Auto-generated catch block
+						e.printStackTrace();
+					}
+				}
+			}).start();
+		
+		removePath();
 		
 		setDestination(point);
 		
@@ -72,7 +117,7 @@ public class MapFragment extends com.TwentyCodes.android.fragments.UserOverlayMa
 		} else if(Debug.DEBUG)
 			Log.d(TAG, "onLocationSelected() Location was null");
 	}
-
+	
 	/**
 	 * (non-Javadoc)
 	 * @see com.TwentyCodes.android.location.UserOverlayMapFragment#onMapViewCreate(com.TwentyCodes.android.location.MapView)
@@ -87,13 +132,31 @@ public class MapFragment extends com.TwentyCodes.android.fragments.UserOverlayMa
 	}
 	
 	/**
+	 * Removes the path if displayed 
+	 * @author ricky barrette
+	 */
+	public void removePath(){
+		if(mDirectionsOverlay != null)
+			mDirectionsOverlay.removePath();
+	}
+	
+	/**
+	 * sets the distener for the directions overlay
+	 * @param listener
+	 * @author ricky barrette
+	 */
+	public void setDirectionsCompleteListener(OnDirectionsCompleteListener listener){
+		mDirectionsCompleteListener = listener;
+	}
+	
+	/**
 	 * @param listener
 	 * @author ricky barrette
 	 */
 	public void setLocationSelectedListener(OnLocationSelectedListener listener){
 		mLocationSelectedListener = listener;
 	}
-	
+
 	/**
 	 * @param radius meters
 	 * @author ricky barrette

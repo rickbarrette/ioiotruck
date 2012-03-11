@@ -47,6 +47,8 @@ public class Main extends Activity implements OnClickListener {
         Thread.setDefaultUncaughtExceptionHandler(new ExceptionHandler(this));
         setContentView(R.layout.main);
         
+//        Integer.parseInt("poop");
+        
         findViewById(R.id.test_activity_button).setOnClickListener(this);
         findViewById(R.id.nav_activity_button).setOnClickListener(this);
         findViewById(R.id.camera_activity_button).setOnClickListener(this);
