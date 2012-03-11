@@ -76,7 +76,29 @@ public class MapFragment extends UserOverlayMapFragment implements OnLocationSel
 	 * @see com.TwentyCodes.android.location.LocationSelectedListener#onLocationSelected(com.google.android.maps.GeoPoint)
 	 */
 	@Override
-	public void onLocationSelected(GeoPoint point) {
+	public void onLocationSelected(final GeoPoint point) {
+		
+		if(mDirectionsCompleteListener != null)
+			new Thread( new Runnable(){
+				@Override
+				public void run(){
+					try {
+						new DirectionsOverlay(getMap(), getUserLocation(), point, MapFragment.this);
+					} catch (IllegalStateException e) {
+						// TODO Auto-generated catch block
+						e.printStackTrace();
+					} catch (ClientProtocolException e) {
+						// TODO Auto-generated catch block
+						e.printStackTrace();
+					} catch (IOException e) {
+						// TODO Auto-generated catch block
+						e.printStackTrace();
+					} catch (JSONException e) {
+						// TODO Auto-generated catch block
+						e.printStackTrace();
+					}
+				}
+			}).start();
 		
 		removePath();
 		
@@ -116,36 +138,6 @@ public class MapFragment extends UserOverlayMapFragment implements OnLocationSel
 	public void removePath(){
 		if(mDirectionsOverlay != null)
 			mDirectionsOverlay.removePath();
-	}
-	
-	/**
-	 * (non-Javadoc)
-	 * @see com.TwentyCodes.android.fragments.UserOverlayMapFragment#setDestination(com.google.android.maps.GeoPoint)
-	 */
-	@Override
-	public void setDestination(final GeoPoint destination) {	
-		if(mDirectionsCompleteListener != null)
-			new Thread( new Runnable(){
-				@Override
-				public void run(){
-					try {
-						new DirectionsOverlay(getMap(), getUserLocation(), destination, MapFragment.this);
-					} catch (IllegalStateException e) {
-						// TODO Auto-generated catch block
-						e.printStackTrace();
-					} catch (ClientProtocolException e) {
-						// TODO Auto-generated catch block
-						e.printStackTrace();
-					} catch (IOException e) {
-						// TODO Auto-generated catch block
-						e.printStackTrace();
-					} catch (JSONException e) {
-						// TODO Auto-generated catch block
-						e.printStackTrace();
-					}
-				}
-			}).start();
-		super.setDestination(destination);
 	}
 	
 	/**

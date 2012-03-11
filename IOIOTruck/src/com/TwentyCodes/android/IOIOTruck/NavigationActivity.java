@@ -77,15 +77,13 @@ public class NavigationActivity extends FragmentActivity implements CompassListe
 		 * aborts the thread 
 		 * @author ricky barrette
 		 */
-		public void abort() {
+		public synchronized void abort() {
 			isAborted = true;
 		}
 		
 		@Override
 		public void run(){
-			while (true) {
-					if (isAborted) 
-						break;
+			while (!isAborted) {
 					updateLog("\nDistance: "+ mDistance +getString(R.string.m)
 							+"\nDrive: "+mIOIOManager.getDriveValue()
 							+"\nSteering: "+mIOIOManager.getSteerValue()
@@ -93,9 +91,7 @@ public class NavigationActivity extends FragmentActivity implements CompassListe
 							+"\nisRunning: "+isRunning);
 							if(mPoints != null)
 								updateLog("Point = "+mIndex +" of "+ mPoints.size());
-					
-					updateLastUpdateTextView();
-					
+							updateLastUpdateTextView();
 					try {
 						sleep(1000);
 					} catch (InterruptedException e) {
@@ -124,9 +120,7 @@ public class NavigationActivity extends FragmentActivity implements CompassListe
 	private IOIOTruckManager mIOIOManager;
 	private MapFragment mMap;
 	private TextView mLog;
-	private GeoPoint mPoint;
 	private ProgressBar mProgress;
-	private int mMaxDistance = 0; //meters
 	private boolean isRunning = false;
 	private Button mGoButton;
 	private float mBearing;
@@ -138,7 +132,7 @@ public class NavigationActivity extends FragmentActivity implements CompassListe
 	private TextView mLastUpdateTextView;
 	private long mLast;
 	private WakeLock mWakeLock;
-	private int mCount;
+	private int mCount = 0;
 	private ArrayList<GeoPoint> mPoints;
 	private int mIndex = 0;
 	private GeoPoint mDestPoint;
@@ -171,7 +165,7 @@ public class NavigationActivity extends FragmentActivity implements CompassListe
 				break;
 				
 			case R.id.mark_my_lcoation_button:
-				GeoPoint point = mMap.getUserLocation();
+				final GeoPoint point = mMap.getUserLocation();
 				
 				if(point != null){
 					mMap.onLocationSelected(point);
@@ -180,7 +174,7 @@ public class NavigationActivity extends FragmentActivity implements CompassListe
 				break;
 				
 			case R.id.my_location_button:
-				GeoPoint user = mMap.getUserLocation();
+				final GeoPoint user = mMap.getUserLocation();
 				
 				if(user != null){
 					mMap.setMapCenter(user);
@@ -198,7 +192,7 @@ public class NavigationActivity extends FragmentActivity implements CompassListe
 	 */
 	@Override
 	public void onCompassUpdate(float bearing) {
-		bearing = GeoUtils.calculateBearing(mMap.getUserLocation(), mPoint, bearing);
+		bearing = GeoUtils.calculateBearing(mMap.getUserLocation(), mMap.getDestination(), bearing);
 
 		if(bearing > 355 || bearing < 5)
 			mIOIOManager.setSteerValue(IOIOTruckValues.STEER_STRAIGHT);
@@ -261,9 +255,8 @@ public class NavigationActivity extends FragmentActivity implements CompassListe
 				}
 		
 			mPoints = points;
-			mPoint = points.get(0);
-			mMap.setDestination(mPoint);
-			mWayPoints.add(new PathOverlay(mPoint, 5, Color.MAGENTA));
+			mMap.setDestination(points.get(0));
+			mWayPoints.add(new PathOverlay(points.get(0), 5, Color.MAGENTA));
 			mMap.getMap().getOverlays().addAll(mWayPoints);
 			mWayPoints.addAll(path);
 		}
@@ -280,59 +273,67 @@ public class NavigationActivity extends FragmentActivity implements CompassListe
 	 * @see com.TwentyCodes.android.location.GeoPointLocationListener#onLocationChanged(com.google.android.maps.GeoPoint, int)
 	 */
 	@Override
-	public synchronized void onLocationChanged(GeoPoint point, int accuracy) {
+	public synchronized void onLocationChanged(final GeoPoint point, final int accuracy) {
 		mLast = System.currentTimeMillis();
 		mAccuracyTextView.setText(accuracy+getString(R.string.m));
-		
 		mDistance = updateProgress(point);
+		final GeoPoint currentDest = mMap.getDestination();
 		
 		/*
 		 * if we have a destination, check to see if we are there yet
+		 * if we are then increment mCount
 		 */
-		if(mPoint != null)
-			if(GeoUtils.isIntersecting(point, (float) (accuracy / 1E3), mPoint, Debug.RADIUS, Debug.FUDGE_FACTOR)) {
-				mCount++;
+		if(point != null)
+			if(currentDest != null)
+				
 				
 				/*
-				 * if we get 5 positives, we are at our waypoint/dest
+				 * are we closer than 15 feet?
 				 */
-				if(mCount > 5){
-					
+				if (GeoUtils.distanceKm(point, currentDest) < 0.009144) {
+//				if(GeoUtils.isIntersecting(point, (float) (accuracy / 1E3), currentDest, Debug.RADIUS, Debug.FUDGE_FACTOR)) {
+					updateLog("Count = "+ (++mCount));
 					/*
-					 * if ther points list is null, or there are no more points
+					 * if we get 6 positives, we are problay at our waypoint/dest
 					 */
-					if(mPoints == null || mIndex == mPoints.size()){
-						mIOIOManager.setDriveValue(IOIOTruckValues.DRIVE_STOP);
-						updateGoButton(true);
-						updateLog(R.string.dest_reached);
-					} else {
-						mIndex ++;
+					if(mCount == 6){
+						
+						mCount = 0;
 						
 						/*
-						 * if there are more waypoints, then move on to the next
-						 * otherwise move on to the dest
+						 * if the points list is null, or there are no more waypoints
 						 */
-						if(mIndex < mPoints.size()) {
-							updateLog("Waypoint reached, moving to next");
-							mPoint = mPoints.get(mIndex);
+						if(mPoints == null || mIndex == mPoints.size()){
+							mIOIOManager.setDriveValue(IOIOTruckValues.DRIVE_STOP);
+							updateGoButton(true);
+							updateLog(R.string.dest_reached);
+							mMap.setDestination(null);
 						} else {
-							updateLog("last Waypoint reached, moving to dest");
-							mPoint = mDestPoint;
+								updateLog("Index = " + (++mIndex));
+							
+							/*
+							 * if there are more waypoints, then move on to the next
+							 * otherwise move on to the dest
+							 */
+							if(mIndex < mPoints.size()) {
+								updateLog("Waypoint reached, moving to next");
+								mMap.setDestination(mPoints.get(mIndex));
+							} else {
+								updateLog("last Waypoint reached, moving to dest");
+								mMap.setDestination(mDestPoint);
+							}
+							
+							updateLog("New dest = "+ mMap.getDestination().toString());
 						}
-						
-						/*
-						 * we have to notify the compass that the point has changed
-						 */
-						mMap.setDestination(mPoint);
 					}
+					
+				} else {
+					Log.v(TAG, "Driving Forward");
+					mCount = 0;
+					mIOIOManager.setDriveValue(IOIOTruckValues.DRIVE_FORWARD);
 				}
-			} else {
-				Log.v(TAG, "Driving Forward");
-				mCount = 0;
-				mIOIOManager.setDriveValue(IOIOTruckValues.DRIVE_FORWARD);
-			}
-		else{
-			Log.v(TAG, "Lost GPS signal, stopping");
+		else {
+			updateLog("Lost GPS signal (point was null), stopping");
 			mIOIOManager.setDriveValue(IOIOTruckValues.DRIVE_STOP);
 		}
 
@@ -487,13 +488,10 @@ public class NavigationActivity extends FragmentActivity implements CompassListe
 	 * @author ricky barrette
 	 */
 	private int updateProgress(GeoPoint point) {
-		int distance = (int) (GeoUtils.distanceKm(point, mPoint) * 1000);
-		if (distance > mMaxDistance) {
-			mMaxDistance = distance;
+		int distance = (int) (GeoUtils.distanceKm(point, mMap.getDestination()) * 1000);
+		if (distance > mProgress.getMax())
 			mProgress.setMax(distance);
-		}		
 		mProgress.setProgress(distance);
 		return distance;
 	}
-	
 }
