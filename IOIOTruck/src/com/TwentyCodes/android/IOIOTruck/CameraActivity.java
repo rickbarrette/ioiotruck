@@ -20,7 +20,7 @@
  */
 package com.TwentyCodes.android.IOIOTruck;
 
-import com.TwentyCodes.android.IOIOTruck.IOIOTruckManager.IOIOTruckThreadListener;
+import com.TwentyCodes.android.IOIOTruck.IOIOTruckConnectionManager.IOIOTruckThreadListener;
 
 import android.content.Context;
 import android.os.Bundle;
@@ -40,7 +40,7 @@ import android.widget.TextView;
 public class CameraActivity extends FragmentActivity implements IOIOTruckThreadListener {
 
 	private static final String TAG = "CameraActivity";
-	private IOIOTruckManager mIOIOManager;
+	private IOIOTruckConnectionManager mIOIOManager;
 	private WakeLock mWakeLock;
 	private TextView mLogTextView;
 
@@ -54,6 +54,28 @@ public class CameraActivity extends FragmentActivity implements IOIOTruckThreadL
 		super.onCreate(icicle);
 		setContentView(R.layout.camera_activity);
 		mLogTextView = (TextView) findViewById(R.id.log_textView);
+		mIOIOManager = new IOIOTruckConnectionManager(this, this);
+		mIOIOManager.getIOIOAndroidApplicationHelper().create();
+	}
+
+	/**
+	 * (non-Javadoc)
+	 * @see android.support.v4.app.FragmentActivity#onDestroy()
+	 */
+	@Override
+	protected void onDestroy() {
+		mIOIOManager.getIOIOAndroidApplicationHelper().destroy();
+		super.onDestroy();
+	}
+
+	/**
+	 * Called when the IOIO Manager wants to log something
+	 * (non-Javadoc)
+	 * @see com.TwentyCodes.android.IOIOTruck.IOIOTruckConnectionManager.IOIOTruckThreadListener#onLogUpdate(java.lang.String)
+	 */
+	@Override
+	public void onLogUpdate(String log) {
+		mLogTextView.setText(log);
 	}
 
 	/**
@@ -64,13 +86,18 @@ public class CameraActivity extends FragmentActivity implements IOIOTruckThreadL
 	@Override
 	protected void onPause() {
 		super.onPause();
-		try {
-			mIOIOManager.abort();
-		} catch (InterruptedException e) {
-			e.printStackTrace();
-		}
 		if(mWakeLock.isHeld())
 			mWakeLock.release();
+	}
+
+	/**
+	 * (non-Javadoc)
+	 * @see android.app.Activity#onRestart()
+	 */
+	@Override
+	protected void onRestart() {
+		mIOIOManager.getIOIOAndroidApplicationHelper().restart();
+		super.onRestart();
 	}
 
 	/**
@@ -80,8 +107,6 @@ public class CameraActivity extends FragmentActivity implements IOIOTruckThreadL
 	 */
 	@Override
 	protected void onResume() {
-		mIOIOManager = new IOIOTruckManager(this, this);
-		mIOIOManager.start();
 		
 		PowerManager pm = (PowerManager) this.getSystemService(Context.POWER_SERVICE);
 		mWakeLock = pm.newWakeLock(PowerManager.SCREEN_DIM_WAKE_LOCK | PowerManager.ON_AFTER_RELEASE, TAG);
@@ -90,13 +115,23 @@ public class CameraActivity extends FragmentActivity implements IOIOTruckThreadL
 	}
 
 	/**
-	 * Called when the IOIO Manager wants to log something
 	 * (non-Javadoc)
-	 * @see com.TwentyCodes.android.IOIOTruck.IOIOTruckManager.IOIOTruckThreadListener#onLogUpdate(java.lang.String)
+	 * @see android.support.v4.app.FragmentActivity#onStart()
 	 */
 	@Override
-	public void onLogUpdate(String log) {
-		mLogTextView.setText(log);
+	protected void onStart() {
+		mIOIOManager.getIOIOAndroidApplicationHelper().start();
+		super.onStart();
+	}
+
+	/**
+	 * (non-Javadoc)
+	 * @see android.support.v4.app.FragmentActivity#onStop()
+	 */
+	@Override
+	protected void onStop() {
+		mIOIOManager.getIOIOAndroidApplicationHelper().stop();
+		super.onStop();
 	}
 
 }

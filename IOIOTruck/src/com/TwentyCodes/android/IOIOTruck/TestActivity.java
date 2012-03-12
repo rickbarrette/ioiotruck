@@ -32,7 +32,7 @@ import android.widget.TextView;
 
 import com.MobileAnarchy.Android.Widgets.Joystick.JoystickMovedListener;
 import com.MobileAnarchy.Android.Widgets.Joystick.JoystickView;
-import com.TwentyCodes.android.IOIOTruck.IOIOTruckManager.IOIOTruckThreadListener;
+import com.TwentyCodes.android.IOIOTruck.IOIOTruckConnectionManager.IOIOTruckThreadListener;
 import com.TwentyCodes.android.exception.ExceptionHandler;
 
 /**
@@ -50,7 +50,17 @@ public class TestActivity extends Activity implements JoystickMovedListener, OnS
 	private TextView mDriveTextView;
 	private TextView mSteerTextView;
 	private TextView mShifterTextView;
-	private IOIOTruckManager mIOIOManager;
+	private IOIOTruckConnectionManager mIOIOManager;
+
+	/**
+	 * Called when the led swich is toggled
+	 * (non-Javadoc)
+	 * @see android.widget.CompoundButton.OnCheckedChangeListener#onCheckedChanged(android.widget.CompoundButton, boolean)
+	 */
+	@Override
+	public void onCheckedChanged(CompoundButton buttonView, boolean isChecked) {
+			mIOIOManager.setStatLedEnabled(isChecked);
+	}
 
 	/**
 	 * Called when the activity is first created
@@ -82,34 +92,28 @@ public class TestActivity extends Activity implements JoystickMovedListener, OnS
 		mDriveTextView.setText(getString(R.string.drive)+1500);
 		mSteerTextView.setText(getString(R.string.steer)+1500);
 		mShifterTextView.setText(getString(R.string.shifter)+1500);
+		mIOIOManager = new IOIOTruckConnectionManager(this, this);
+		mIOIOManager.getIOIOAndroidApplicationHelper().create();
 	}
 
 	/**
-	 * Called when the application is resumed (also when first started). Here is
-	 * where we'll create our IOIO thread.
-	 * @author ricky barrette
+	 * (non-Javadoc)
+	 * @see android.app.Activity#onDestroy()
 	 */
 	@Override
-	protected void onResume() {
-		super.onResume();
-		mIOIOManager = new IOIOTruckManager(this, this);
-		mIOIOManager.start();
+	protected void onDestroy() {
+		mIOIOManager.getIOIOAndroidApplicationHelper().destroy();
+		super.onDestroy();
 	}
 
 	/**
-	 * Called when the application is paused. We want to disconnect with the
-	 * IOIO at this point, as the user is no longer interacting with our
-	 * application.
-	 * @author ricky barrette
+	 * Called when the IOIOTruckThread has a log to publish
+	 * (non-Javadoc)
+	 * @see com.TwentyCodes.android.IOIOTruck.IOIOTruckConnectionManager.IOIOTruckThreadListener#onLogUpdate(java.lang.String)
 	 */
 	@Override
-	protected void onPause() {
-		super.onPause();
-		try {
-			mIOIOManager.abort();
-		} catch (InterruptedException e) {
-			e.printStackTrace();
-		}
+	public void onLogUpdate(String log) {
+		mStatusTextView.setText(log);
 	}
 
 	/**
@@ -128,6 +132,19 @@ public class TestActivity extends Activity implements JoystickMovedListener, OnS
 	}
 
 	/**
+	 * Called when the shifter seekbar is adjusted
+	 * (non-Javadoc)
+	 * @see android.widget.SeekBar.OnSeekBarChangeListener#onProgressChanged(android.widget.SeekBar, int, boolean)
+	 */
+	@Override
+	public void onProgressChanged(SeekBar seekBar, int progress, boolean fromUser) {
+		float shifter = progress + 1000;
+		mIOIOManager.setShifterValue(progress + 1000);
+		
+		mShifterTextView.setText(getString(R.string.shifter)+ shifter);
+	}
+
+	/**
 	 * Called when the joystick is released
 	 * (non-Javadoc)
 	 * @see com.MobileAnarchy.Android.Widgets.Joystick.JoystickMovedListener#OnReleased()
@@ -135,6 +152,16 @@ public class TestActivity extends Activity implements JoystickMovedListener, OnS
 	@Override
 	public void OnReleased() {
 		//NOT USED
+	}
+
+	/**
+	 * (non-Javadoc)
+	 * @see android.app.Activity#onRestart()
+	 */
+	@Override
+	protected void onRestart() {
+		mIOIOManager.getIOIOAndroidApplicationHelper().restart();
+		super.onRestart();
 	}
 
 	/**
@@ -150,16 +177,13 @@ public class TestActivity extends Activity implements JoystickMovedListener, OnS
 	}
 
 	/**
-	 * Called when the shifter seekbar is adjusted
 	 * (non-Javadoc)
-	 * @see android.widget.SeekBar.OnSeekBarChangeListener#onProgressChanged(android.widget.SeekBar, int, boolean)
+	 * @see android.app.Activity#onStart()
 	 */
 	@Override
-	public void onProgressChanged(SeekBar seekBar, int progress, boolean fromUser) {
-		float shifter = progress + 1000;
-		mIOIOManager.setShifterValue(progress + 1000);
-		
-		mShifterTextView.setText(getString(R.string.shifter)+ shifter);
+	protected void onStart() {
+		mIOIOManager.getIOIOAndroidApplicationHelper().start();
+		super.onStart();
 	}
 
 	@Override
@@ -167,28 +191,18 @@ public class TestActivity extends Activity implements JoystickMovedListener, OnS
 		//NOT USED
 	}
 
+	/**
+	 * (non-Javadoc)
+	 * @see android.app.Activity#onStop()
+	 */
+	@Override
+	protected void onStop() {
+		mIOIOManager.getIOIOAndroidApplicationHelper().stop();
+		super.onStop();
+	}
+
 	@Override
 	public void onStopTrackingTouch(SeekBar seekBar) {
 		//NOT USED
-	}
-
-	/**
-	 * Called when the led swich is toggled
-	 * (non-Javadoc)
-	 * @see android.widget.CompoundButton.OnCheckedChangeListener#onCheckedChanged(android.widget.CompoundButton, boolean)
-	 */
-	@Override
-	public void onCheckedChanged(CompoundButton buttonView, boolean isChecked) {
-			mIOIOManager.setStatLedEnabled(isChecked);
-	}
-
-	/**
-	 * Called when the IOIOTruckThread has a log to publish
-	 * (non-Javadoc)
-	 * @see com.TwentyCodes.android.IOIOTruck.IOIOTruckManager.IOIOTruckThreadListener#onLogUpdate(java.lang.String)
-	 */
-	@Override
-	public void onLogUpdate(String log) {
-		mStatusTextView.setText(log);
 	}
 }

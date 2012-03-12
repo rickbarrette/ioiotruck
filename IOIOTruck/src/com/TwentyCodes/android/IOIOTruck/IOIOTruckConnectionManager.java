@@ -25,15 +25,17 @@ import ioio.lib.api.DigitalOutput;
 import ioio.lib.api.IOIO;
 import ioio.lib.api.PwmOutput;
 import ioio.lib.api.exception.ConnectionLostException;
+import ioio.lib.util.IOIOLooper;
+import ioio.lib.util.IOIOLooperProvider;
+import ioio.lib.util.android.IOIOAndroidApplicationHelper;
 import android.app.Activity;
-
-import com.TwentyCodes.android.ioio.IOIOManager;
+import android.util.Log;
 
 /**
  * This IOIO thread will be used to drive a rc truck
  * @author ricky barrette
  */
-public class IOIOTruckManager extends IOIOManager {
+public class IOIOTruckConnectionManager implements IOIOLooper, IOIOLooperProvider {
 
 	/**
 	 * This listener will be used to notify the owner of this thread to update the onscreen log 
@@ -55,6 +57,10 @@ public class IOIOTruckManager extends IOIOManager {
 	private DigitalOutput mMotorDriverStandBy;
 	private DigitalInput mLeftFrontBumber;
 	private DigitalInput mRightFrontBumber;
+	private boolean isStatLedEnabled;
+	private IOIOAndroidApplicationHelper mIOIOAndroidApplicationHelper;
+	private IOIO mIOIO;
+	private DigitalOutput mStatLed;
 	
 	/**
 	 * Creates a new IOIOTruckThread
@@ -62,8 +68,9 @@ public class IOIOTruckManager extends IOIOManager {
 	 * @param listener
 	 * @author ricky barrette
 	 */
-	public IOIOTruckManager(Activity activity, IOIOTruckThreadListener listener){
+	public IOIOTruckConnectionManager(Activity activity, IOIOTruckThreadListener listener){
 		super();
+		mIOIOAndroidApplicationHelper = new IOIOAndroidApplicationHelper(activity, this);
 		mActivity = activity;
 		mListener = listener;
 		updateLog(R.string.wait_ioio);
@@ -111,9 +118,11 @@ public class IOIOTruckManager extends IOIOManager {
 	 * @see com.TwentyCodes.android.ioio.IOIOThread#onConnected()
 	 */
 	@Override
-	public void onConnected(IOIO ioio) throws ConnectionLostException {
+	public void setup(IOIO ioio) throws ConnectionLostException,InterruptedException {
 		updateLog(R.string.ioio_connected);
+		mIOIO = ioio;
 		
+		mStatLed = ioio.openDigitalOutput(0, true);
 		mShifter = ioio.openPwmOutput(IOIOTruckValues.SHIFTER_PORT, IOIOTruckValues.RC_PWM_FRQ);
 		mLeftMotor = new TB6612FNGMotorDriver(ioio, IOIOTruckValues.MOTOR_DRIVER_PWMA, IOIOTruckValues.MOTOR_DRIVER_A1, IOIOTruckValues.MOTOR_DRIVER_A2);
 		mRightMotor = new TB6612FNGMotorDriver(ioio, IOIOTruckValues.MOTOR_DRIVER_PWMB, IOIOTruckValues.MOTOR_DRIVER_B1, IOIOTruckValues.MOTOR_DRIVER_B2);
@@ -133,7 +142,7 @@ public class IOIOTruckManager extends IOIOManager {
 	 * @see com.TwentyCodes.android.ioio.IOIOThread#onDisconnect()
 	 */
 	@Override
-	public void onDisconnected() {
+	public void disconnected() {
 		updateLog(R.string.wait_ioio);
 	}
 
@@ -145,35 +154,40 @@ public class IOIOTruckManager extends IOIOManager {
 	@Override
 	public void loop() throws ConnectionLostException, InterruptedException {
 		
-		this.setStatLedEnabled(isStatLedEnabled());
-		
-		mShifter.setPulseWidth(mShifterValue);
-		
 		/*
 		 * we need to check our sensors before we can make a move. 
 		 */
 		if(mLeftFrontBumber.read()){
 			//TODO backup, spin right, drive forward
-			setStatLedEnabled(false);
+			isStatLedEnabled = false;
 		} else if(mRightFrontBumber.read()){
 			//TODO backup, spin left, drive forward
-			setStatLedEnabled(false);
+			isStatLedEnabled = false;
 		}
 		
-		mMotorDriverStandBy.write(isStatLedEnabled());
+//		mIOIO.beginBatch();
+		
+		mStatLed.write(!isStatLedEnabled);
+		
+		mShifter.setPulseWidth(mShifterValue);
+		
+		
+		mMotorDriverStandBy.write(isStatLedEnabled);
 		
 		/*
 		 * if the autonomous routine is running
 		 * then drive the truck
 		 * else stop the truck
 		 */
-		if(isStatLedEnabled()){
+		if(isStatLedEnabled){
 			arcadeDrive();
 		}
 		else{				
 			mLeftMotor.setSpeed(0);
 			mRightMotor.setSpeed(0);
 		}
+		
+//		mIOIO.endBatch();
 	}
 
 	/**
@@ -210,5 +224,41 @@ public class IOIOTruckManager extends IOIOManager {
 					mListener.onLogUpdate(mActivity.getString(resId));
 				}
 			});
+	}
+
+	@Override
+	public void incompatible() {
+		// TODO Auto-generated method stub
+		
+	}
+
+	@Override
+	public IOIOLooper createIOIOLooper(String connectionType, Object extra) {
+		Log.v(TAG, connectionType);
+		return this;
+	}
+
+	/**
+	 * @return the mIOIOAndroidApplicationHelper
+	 */
+	public IOIOAndroidApplicationHelper getIOIOAndroidApplicationHelper() {
+		return mIOIOAndroidApplicationHelper;
+	}
+
+	/**
+	 * set the status of the led
+	 * @param b
+	 * @author ricky barrette
+	 */
+	public void setStatLedEnabled(boolean b) {
+		this.isStatLedEnabled = b;
+	}
+	
+	/**
+	 * @return state of status led
+	 * @author ricky barrette
+	 */
+	public boolean isStatLedEnabled(){
+		return this.isStatLedEnabled;
 	}
 }

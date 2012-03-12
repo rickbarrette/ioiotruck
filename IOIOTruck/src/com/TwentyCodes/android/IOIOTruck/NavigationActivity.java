@@ -41,7 +41,7 @@ import android.widget.Switch;
 import android.widget.TextView;
 import android.widget.Toast;
 
-import com.TwentyCodes.android.IOIOTruck.IOIOTruckManager.IOIOTruckThreadListener;
+import com.TwentyCodes.android.IOIOTruck.IOIOTruckConnectionManager.IOIOTruckThreadListener;
 import com.TwentyCodes.android.location.CompassListener;
 import com.TwentyCodes.android.location.GeoPointLocationListener;
 import com.TwentyCodes.android.location.GeoUtils;
@@ -117,7 +117,7 @@ public class NavigationActivity extends FragmentActivity implements CompassListe
 			
 	}
 	private static final String TAG = "NavigationActivity";
-	private IOIOTruckManager mIOIOManager;
+	private IOIOTruckConnectionManager mIOIOManager;
 	private MapFragment mMap;
 	private TextView mLog;
 	private ProgressBar mProgress;
@@ -214,6 +214,7 @@ public class NavigationActivity extends FragmentActivity implements CompassListe
 	protected void onCreate(Bundle icicle) {
 		super.onCreate(icicle);
 		setContentView(R.layout.nav_activity);
+		
 		/*
 		 * init UI
 		 */
@@ -233,6 +234,19 @@ public class NavigationActivity extends FragmentActivity implements CompassListe
 		findViewById(R.id.mark_my_lcoation_button).setOnClickListener(this);
 		findViewById(R.id.my_location_button).setOnClickListener(this);
 		findViewById(R.id.map_button).setOnClickListener(this);
+		
+		mIOIOManager = new IOIOTruckConnectionManager(this, this);
+		mIOIOManager.getIOIOAndroidApplicationHelper().create();
+	}
+
+	/**
+	 * (non-Javadoc)
+	 * @see android.support.v4.app.FragmentActivity#onDestroy()
+	 */
+	@Override
+	protected void onDestroy() {
+		mIOIOManager.getIOIOAndroidApplicationHelper().destroy();
+		super.onDestroy();
 	}
 
 	/**
@@ -266,7 +280,7 @@ public class NavigationActivity extends FragmentActivity implements CompassListe
 	public void onFirstFix(boolean isFirstFix) {
 		mMap.disableGPSProgess();
 	}
-	
+
 	/**
 	 * Called when android's location services have an update
 	 * (non-Javadoc)
@@ -338,7 +352,7 @@ public class NavigationActivity extends FragmentActivity implements CompassListe
 		}
 
 	}
-	
+
 	/**
 	 * Called when the user selects a point for the truck to drive to
 	 * (non-Javadoc)
@@ -358,13 +372,13 @@ public class NavigationActivity extends FragmentActivity implements CompassListe
 	/**
 	 * Called when the IOIOTruckThread has a log it wants to display
 	 * (non-Javadoc)
-	 * @see com.TwentyCodes.android.IOIOTruck.IOIOTruckManager.IOIOTruckThreadListener#onLogUpdate(java.lang.String)
+	 * @see com.TwentyCodes.android.IOIOTruck.IOIOTruckConnectionManager.IOIOTruckThreadListener#onLogUpdate(java.lang.String)
 	 */
 	@Override
 	public void onLogUpdate(String log) {
 		updateLog(log);
 	}
-
+	
 	/**
 	 * Called when the application is paused. We want to disconnect with the
 	 * IOIO at this point, as the user is no longer interacting with our
@@ -373,12 +387,6 @@ public class NavigationActivity extends FragmentActivity implements CompassListe
 	 */
 	@Override
 	protected void onPause() {
-		try {
-			mIOIOManager.abort();
-		} catch (InterruptedException e) {
-			e.printStackTrace();
-		}
-		
 		if(mLoggerThread != null)
 			mLoggerThread.abort();
 		
@@ -387,6 +395,16 @@ public class NavigationActivity extends FragmentActivity implements CompassListe
 		super.onPause();
 	}
 	
+	/**
+	 * (non-Javadoc)
+	 * @see android.app.Activity#onRestart()
+	 */
+	@Override
+	protected void onRestart() {
+		mIOIOManager.getIOIOAndroidApplicationHelper().restart();
+		super.onRestart();
+	}
+
 	/**
 	 * (non-Javadoc)
 	 * @see android.support.v4.app.FragmentActivity#onResume()
@@ -401,12 +419,30 @@ public class NavigationActivity extends FragmentActivity implements CompassListe
 		mMap.setDirectionsCompleteListener(this);
 		mMap.setRadius((int) (Debug.RADIUS * 1E3));
 		mMap.enableGPSProgess();
-		mIOIOManager = new IOIOTruckManager(this, this);
-		mIOIOManager.start();
 		
 		PowerManager pm = (PowerManager) this.getSystemService(Context.POWER_SERVICE);
 		mWakeLock = pm.newWakeLock(PowerManager.SCREEN_DIM_WAKE_LOCK | PowerManager.ON_AFTER_RELEASE, TAG);
 		mWakeLock.acquire();
+	}
+
+	/**
+	 * (non-Javadoc)
+	 * @see android.support.v4.app.FragmentActivity#onStart()
+	 */
+	@Override
+	protected void onStart() {
+		mIOIOManager.getIOIOAndroidApplicationHelper().start();
+		super.onStart();
+	}
+	
+	/**
+	 * (non-Javadoc)
+	 * @see android.support.v4.app.FragmentActivity#onStop()
+	 */
+	@Override
+	protected void onStop() {
+		mIOIOManager.getIOIOAndroidApplicationHelper().stop();
+		super.onStop();
 	}
 
 	/**
@@ -465,6 +501,7 @@ public class NavigationActivity extends FragmentActivity implements CompassListe
 		runOnUiThread(new Runnable() {
 			@Override
 			public void run() {
+				
 				mLog.append("\n"+log);
 				
 				/*
