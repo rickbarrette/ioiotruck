@@ -59,7 +59,7 @@ public class IOIOTruckConnectionManager implements IOIOLooper, IOIOLooperProvide
 	private DigitalInput mRightFrontBumber;
 	private boolean isStatLedEnabled;
 	private IOIOAndroidApplicationHelper mIOIOAndroidApplicationHelper;
-	private IOIO mIOIO;
+//	private IOIO mIOIO;
 	private DigitalOutput mStatLed;
 	
 	/**
@@ -120,7 +120,7 @@ public class IOIOTruckConnectionManager implements IOIOLooper, IOIOLooperProvide
 	@Override
 	public void setup(IOIO ioio) throws ConnectionLostException,InterruptedException {
 		updateLog(R.string.ioio_connected);
-		mIOIO = ioio;
+//		mIOIO = ioio;
 		
 		mStatLed = ioio.openDigitalOutput(0, true);
 		mShifter = ioio.openPwmOutput(IOIOTruckValues.SHIFTER_PORT, IOIOTruckValues.RC_PWM_FRQ);
