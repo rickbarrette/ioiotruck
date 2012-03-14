@@ -42,7 +42,7 @@ import android.widget.TextView;
 import android.widget.Toast;
 
 import com.TwentyCodes.android.IOIOTruck.IOIOTruckConnectionManager.IOIOTruckThreadListener;
-import com.TwentyCodes.android.location.CompassListener;
+import com.TwentyCodes.android.location.CompassSensor.CompassListener;
 import com.TwentyCodes.android.location.GeoPointLocationListener;
 import com.TwentyCodes.android.location.GeoUtils;
 import com.TwentyCodes.android.location.OnLocationSelectedListener;
@@ -88,6 +88,7 @@ public class NavigationActivity extends FragmentActivity implements CompassListe
 							+"\nDrive: "+mIOIOManager.getDriveValue()
 							+"\nSteering: "+mIOIOManager.getSteerValue()
 							+"\nBearing: "+mBearing
+							+"\nHeadinging: "+mHeading
 							+"\nisRunning: "+isRunning);
 							if(mPoints != null)
 								updateLog("Point = "+mIndex +" of "+ mPoints.size());
@@ -137,6 +138,8 @@ public class NavigationActivity extends FragmentActivity implements CompassListe
 	private int mIndex = 0;
 	private GeoPoint mDestPoint;
 	private ArrayList<PathOverlay> mWayPoints;
+	private GeoPoint mLastReportedLocation;
+	private float mHeading = 0;
 
 	/**
 	 * Called when the scrolling switch is checked
@@ -192,6 +195,14 @@ public class NavigationActivity extends FragmentActivity implements CompassListe
 	 */
 	@Override
 	public void onCompassUpdate(float bearing) {
+		mBearing = bearing;
+		
+		/*
+		 * used calculated bearing if the last location was updated less than a x ago
+		 */
+		if(mHeading > 0 && (System.currentTimeMillis() - mLast) < 500)
+			bearing = mHeading;
+		
 		bearing = GeoUtils.calculateBearing(mMap.getUserLocation(), mMap.getDestination(), bearing);
 
 		if(bearing > 355 || bearing < 5)
@@ -202,8 +213,6 @@ public class NavigationActivity extends FragmentActivity implements CompassListe
 		
 		if(bearing < 180 && bearing > 5)
 			mIOIOManager.setSteerValue(IOIOTruckValues.STEER_LEFT);
-		
-		mBearing = bearing;
 	}
 	
 	/**
@@ -298,14 +307,21 @@ public class NavigationActivity extends FragmentActivity implements CompassListe
 		 * if we are then increment mCount
 		 */
 		if(point != null)
+			
+			if(mLastReportedLocation != null){
+				mHeading = new Float(GeoUtils.bearing(mLastReportedLocation, point));
+				if(Debug.DEBUG)
+					Log.d(TAG, "Heading = "+ mHeading);
+			}
+			mLastReportedLocation = point;
 			if(currentDest != null)
 				
 				
 				/*
-				 * are we closer than 15 feet?
+				 * are we closer than 30 feet?
 				 */
-				if (GeoUtils.distanceKm(point, currentDest) < 0.009144) {
-//				if(GeoUtils.isIntersecting(point, (float) (accuracy / 1E3), currentDest, Debug.RADIUS, Debug.FUDGE_FACTOR)) {
+//				if (GeoUtils.distanceKm(point, currentDest) < Debug.FUDGE_FACTOR) {
+				if(GeoUtils.isIntersecting(point, (float) (accuracy / 1E3), currentDest, Debug.RADIUS, Debug.FUDGE_FACTOR)) {
 					updateLog("Count = "+ (++mCount));
 					/*
 					 * if we get 6 positives, we are problay at our waypoint/dest
