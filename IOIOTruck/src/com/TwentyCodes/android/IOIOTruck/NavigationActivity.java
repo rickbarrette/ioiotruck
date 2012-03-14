@@ -88,7 +88,6 @@ public class NavigationActivity extends FragmentActivity implements CompassListe
 							+"\nDrive: "+mIOIOManager.getDriveValue()
 							+"\nSteering: "+mIOIOManager.getSteerValue()
 							+"\nBearing: "+mBearing
-							+"\nHeadinging: "+mHeading
 							+"\nisRunning: "+isRunning);
 							if(mPoints != null)
 								updateLog("Point = "+mIndex +" of "+ mPoints.size());
@@ -140,6 +139,7 @@ public class NavigationActivity extends FragmentActivity implements CompassListe
 	private ArrayList<PathOverlay> mWayPoints;
 	private GeoPoint mLastReportedLocation;
 	private float mHeading = 0;
+	private long mLastReportedTime;
 
 	/**
 	 * Called when the scrolling switch is checked
@@ -197,11 +197,18 @@ public class NavigationActivity extends FragmentActivity implements CompassListe
 	public void onCompassUpdate(float bearing) {
 		mBearing = bearing;
 		
+		if(Debug.DEBUG)
+			Log.v(TAG, "Bearing ="+bearing);
+		
 		/*
 		 * used calculated bearing if the last location was updated less than a x ago
 		 */
-		if(mHeading > 0 && (System.currentTimeMillis() - mLast) < 500)
-			bearing = mHeading;
+		if((System.currentTimeMillis() - mLastReportedTime) < 500) 
+			mHeading = bearing;
+		
+		if(Debug.DEBUG)
+			Log.v(TAG, "Heading ="+mHeading);
+
 		
 		bearing = GeoUtils.calculateBearing(mMap.getUserLocation(), mMap.getDestination(), bearing);
 
@@ -309,9 +316,13 @@ public class NavigationActivity extends FragmentActivity implements CompassListe
 		if(point != null)
 			
 			if(mLastReportedLocation != null){
-				mHeading = new Float(GeoUtils.bearing(mLastReportedLocation, point));
-				if(Debug.DEBUG)
-					Log.d(TAG, "Heading = "+ mHeading);
+				if(!point.equals(mLastReportedLocation)){
+					mLastReportedTime = mLast;
+					float heading = new Float(GeoUtils.bearing(mLastReportedLocation, point));
+					mHeading = heading > 180 ? heading -360 : heading;
+					if(Debug.DEBUG)
+						updateLog("Heading = "+ mHeading);
+				}
 			}
 			mLastReportedLocation = point;
 			if(currentDest != null)
