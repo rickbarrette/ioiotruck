@@ -210,7 +210,7 @@ public class NavigationActivity extends FragmentActivity implements CompassListe
 			Log.v(TAG, "Heading ="+mHeading);
 
 		
-		bearing = GeoUtils.calculateBearing(mMap.getUserLocation(), mMap.getDestination(), bearing);
+		bearing = GeoUtils.calculateBearing(mMap.getUserLocation(), mMap.getDestination(), bearing < 0 ? bearing + 360 : bearing);
 
 		if(bearing > 355 || bearing < 5)
 			mIOIOManager.setSteerValue(IOIOTruckValues.STEER_STRAIGHT);
