@@ -39,8 +39,6 @@ import android.view.View;
 import android.view.ViewGroup;
 import android.widget.FrameLayout;
 
-import com.TwentyCodes.android.location.R;
-
 /**
  * This camera fragment will be used to maintain the camera, display a preview on the screen, display a vanishing point overlay on the preview
  * @author ricky barrette
