@@ -1,0 +1,3 @@
+[submodule "ioiolib"]
+	path = ioiolib
+	url = git://rickbarrette.org/ioiolib
